@@ -17,7 +17,10 @@ import gleam/option.{None}
 import gleam/result
 import gleam/string
 
-import signet/types.{type TokenClaims, TokenClaims, User}
+import signet/types.{
+  type Scope, type TokenClaims, DocRead, DocWrite, SummaryWrite, TokenClaims,
+  User, scope_to_string, scopes_from_strings, scopes_to_strings,
+}
 
 /// JWT validation error types
 pub type JwtValidationError {
@@ -28,7 +31,7 @@ pub type JwtValidationError {
   /// Token document doesn't match request
   DocumentMismatch(token_document: String, request_document: String)
   /// Token missing required scope
-  MissingScope(required: String, available: List(String))
+  MissingScope(required: Scope, available: List(Scope))
   /// Token is missing a required claim
   MissingClaim(claim_name: String)
   /// Token claim has invalid value
@@ -38,13 +41,6 @@ pub type JwtValidationError {
 /// Validation result type
 pub type JwtValidationResult(a) =
   Result(a, JwtValidationError)
-
-/// Standard permission scopes
-pub const scope_doc_read = "doc:read"
-
-pub const scope_doc_write = "doc:write"
-
-pub const scope_summary_write = "summary:write"
 
 /// Validate that the token has not expired
 pub fn validate_expiration(
@@ -94,7 +90,7 @@ pub fn validate_document(
 /// Validate that the token has the required scope
 pub fn validate_scope(
   claims: TokenClaims,
-  required_scope: String,
+  required_scope: Scope,
 ) -> JwtValidationResult(Nil) {
   case list.contains(claims.scopes, required_scope) {
     True -> Ok(Nil)
@@ -104,23 +100,23 @@ pub fn validate_scope(
 }
 
 /// Check if token has a specific scope (returns Bool, doesn't error)
-pub fn has_scope(claims: TokenClaims, scope: String) -> Bool {
+pub fn has_scope(claims: TokenClaims, scope: Scope) -> Bool {
   list.contains(claims.scopes, scope)
 }
 
 /// Check if token has read permission
 pub fn has_read_scope(claims: TokenClaims) -> Bool {
-  has_scope(claims, scope_doc_read)
+  has_scope(claims, DocRead)
 }
 
 /// Check if token has write permission
 pub fn has_write_scope(claims: TokenClaims) -> Bool {
-  has_scope(claims, scope_doc_write)
+  has_scope(claims, DocWrite)
 }
 
 /// Check if token has summary write permission
 pub fn has_summary_write_scope(claims: TokenClaims) -> Bool {
-  has_scope(claims, scope_summary_write)
+  has_scope(claims, SummaryWrite)
 }
 
 /// Validate all claims for a document connection
@@ -154,7 +150,7 @@ pub fn validate_read_access(
     document_id,
     current_time_seconds,
   ))
-  use _ <- result.try(validate_scope(claims, scope_doc_read))
+  use _ <- result.try(validate_scope(claims, DocRead))
   Ok(Nil)
 }
 
@@ -172,7 +168,7 @@ pub fn validate_write_access(
     document_id,
     current_time_seconds,
   ))
-  use _ <- result.try(validate_scope(claims, scope_doc_write))
+  use _ <- result.try(validate_scope(claims, DocWrite))
   Ok(Nil)
 }
 
@@ -190,7 +186,7 @@ pub fn validate_summary_access(
     document_id,
     current_time_seconds,
   ))
-  use _ <- result.try(validate_scope(claims, scope_summary_write))
+  use _ <- result.try(validate_scope(claims, SummaryWrite))
   Ok(Nil)
 }
 
@@ -218,7 +214,8 @@ pub fn format_error(error: JwtValidationError) -> String {
       <> request_document
       <> "'"
 
-    MissingScope(required, _available) -> "Missing required scope: " <> required
+    MissingScope(required, _available) ->
+      "Missing required scope: " <> scope_to_string(required)
 
     MissingClaim(claim_name) -> "Missing required claim: " <> claim_name
 
@@ -335,7 +332,8 @@ fn parse_claims(payload: String) -> Result(TokenClaims, JwtCryptoError) {
     use doc <- decode.field("documentId", decode.string)
     use tenant <- decode.field("tenantId", decode.string)
     use exp <- decode.field("exp", decode.int)
-    use scopes <- decode.field("scopes", decode.list(decode.string))
+    use scope_strings <- decode.field("scopes", decode.list(decode.string))
+    let scopes = scopes_from_strings(scope_strings)
     use user <- decode.field("user", {
       use id <- decode.field("id", decode.string)
       use name <- decode.optional_field("name", id, decode.string)
@@ -378,7 +376,7 @@ fn parse_claims(payload: String) -> Result(TokenClaims, JwtCryptoError) {
 pub fn mint_token(
   tenant: String,
   document_id: String,
-  scopes: List(String),
+  scopes: List(Scope),
   user_id: String,
   secret: String,
   now: Int,
@@ -393,7 +391,7 @@ pub fn mint_token(
     json.object([
       #("documentId", json.string(document_id)),
       #("tenantId", json.string(tenant)),
-      #("scopes", json.array(scopes, json.string)),
+      #("scopes", json.array(scopes_to_strings(scopes), json.string)),
       #("user", json.object([#("id", json.string(user_id))])),
       #("ver", json.string("1.0")),
       #("iat", json.int(now)),

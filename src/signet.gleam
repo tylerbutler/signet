@@ -36,7 +36,7 @@ pub fn extract_token(
 pub fn mint_token(
   tenant: String,
   document_id: String,
-  scopes: List(String),
+  scopes: List(types.Scope),
   user_id: String,
   secret: String,
   now: Int,

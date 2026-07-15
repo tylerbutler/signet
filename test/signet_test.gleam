@@ -1,4 +1,6 @@
+import gleam/dict
 import gleam/list
+import gleam/option
 import signet
 import signet/jwt
 import signet/types.{DocRead, DocWrite, SummaryRead, SummaryWrite}
@@ -7,6 +9,203 @@ import startest/expect
 
 pub fn main() -> Nil {
   startest.run(startest.default_config())
+}
+
+fn make_test_claims(
+  tenant_id: String,
+  document_id: String,
+  scopes: List(types.Scope),
+  exp: Int,
+) -> types.TokenClaims {
+  types.TokenClaims(
+    document_id: document_id,
+    scopes: scopes,
+    tenant_id: tenant_id,
+    user: types.User(id: "test-user", properties: dict.new()),
+    issued_at: 1000,
+    expiration: exp,
+    version: "1.0",
+    jti: option.None,
+  )
+}
+
+fn assert_error_variant(result: Result(a, e), check: fn(e) -> Nil) -> Nil {
+  case result {
+    Error(err) -> check(err)
+    Ok(_) -> panic as "Expected Error, got Ok"
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JWT claim validation (ported from spillway; typed scopes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub fn validate_expiration_valid_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead], 2000)
+  jwt.validate_expiration(claims, 1500) |> expect.to_be_ok()
+}
+
+pub fn validate_expiration_expired_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead], 1000)
+  jwt.validate_expiration(claims, 1500)
+  |> assert_error_variant(fn(err) {
+    let assert jwt.TokenExpired(exp, current) = err
+    exp |> expect.to_equal(1000)
+    current |> expect.to_equal(1500)
+  })
+}
+
+pub fn validate_tenant_match_test() {
+  let claims = make_test_claims("my-tenant", "doc", [DocRead], 2000)
+  jwt.validate_tenant(claims, "my-tenant") |> expect.to_be_ok()
+}
+
+pub fn validate_tenant_mismatch_test() {
+  let claims = make_test_claims("my-tenant", "doc", [DocRead], 2000)
+  jwt.validate_tenant(claims, "other-tenant")
+  |> assert_error_variant(fn(err) {
+    let assert jwt.TenantMismatch(token, request) = err
+    token |> expect.to_equal("my-tenant")
+    request |> expect.to_equal("other-tenant")
+  })
+}
+
+pub fn validate_document_match_test() {
+  let claims = make_test_claims("tenant", "my-doc", [DocRead], 2000)
+  jwt.validate_document(claims, "my-doc") |> expect.to_be_ok()
+}
+
+pub fn validate_document_mismatch_test() {
+  let claims = make_test_claims("tenant", "my-doc", [DocRead], 2000)
+  jwt.validate_document(claims, "other-doc")
+  |> assert_error_variant(fn(err) {
+    let assert jwt.DocumentMismatch(token, request) = err
+    token |> expect.to_equal("my-doc")
+    request |> expect.to_equal("other-doc")
+  })
+}
+
+pub fn validate_scope_present_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead, DocWrite], 2000)
+  jwt.validate_scope(claims, DocRead) |> expect.to_be_ok()
+  jwt.validate_scope(claims, DocWrite) |> expect.to_be_ok()
+}
+
+pub fn validate_scope_missing_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead], 2000)
+  jwt.validate_scope(claims, DocWrite)
+  |> assert_error_variant(fn(err) {
+    let assert jwt.MissingScope(required, _available) = err
+    required |> expect.to_equal(DocWrite)
+  })
+}
+
+pub fn has_scope_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead, DocWrite], 2000)
+  jwt.has_scope(claims, DocRead) |> expect.to_be_true()
+  jwt.has_scope(claims, DocWrite) |> expect.to_be_true()
+  jwt.has_scope(claims, SummaryWrite) |> expect.to_be_false()
+}
+
+pub fn has_read_scope_test() {
+  make_test_claims("tenant", "doc", [DocRead], 2000)
+  |> jwt.has_read_scope
+  |> expect.to_be_true()
+  make_test_claims("tenant", "doc", [DocWrite], 2000)
+  |> jwt.has_read_scope
+  |> expect.to_be_false()
+}
+
+pub fn has_write_scope_test() {
+  make_test_claims("tenant", "doc", [DocWrite], 2000)
+  |> jwt.has_write_scope
+  |> expect.to_be_true()
+  make_test_claims("tenant", "doc", [DocRead], 2000)
+  |> jwt.has_write_scope
+  |> expect.to_be_false()
+}
+
+pub fn has_summary_write_scope_test() {
+  make_test_claims("tenant", "doc", [SummaryWrite], 2000)
+  |> jwt.has_summary_write_scope
+  |> expect.to_be_true()
+  make_test_claims("tenant", "doc", [DocWrite], 2000)
+  |> jwt.has_summary_write_scope
+  |> expect.to_be_false()
+}
+
+pub fn validate_connection_claims_test() {
+  let claims =
+    make_test_claims("my-tenant", "my-doc", [DocRead, DocWrite], 2000)
+  jwt.validate_connection_claims(claims, "my-tenant", "my-doc", 1500)
+  |> expect.to_be_ok()
+}
+
+pub fn validate_connection_claims_expired_test() {
+  let claims = make_test_claims("my-tenant", "my-doc", [DocRead], 1000)
+  jwt.validate_connection_claims(claims, "my-tenant", "my-doc", 1500)
+  |> assert_error_variant(fn(err) {
+    let assert jwt.TokenExpired(_, _) = err
+    Nil
+  })
+}
+
+pub fn validate_connection_claims_tenant_mismatch_test() {
+  let claims = make_test_claims("my-tenant", "my-doc", [DocRead], 2000)
+  jwt.validate_connection_claims(claims, "other-tenant", "my-doc", 1500)
+  |> assert_error_variant(fn(err) {
+    let assert jwt.TenantMismatch(_, _) = err
+    Nil
+  })
+}
+
+pub fn validate_read_access_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead], 2000)
+  jwt.validate_read_access(claims, "tenant", "doc", 1500) |> expect.to_be_ok()
+}
+
+pub fn validate_read_access_missing_scope_test() {
+  let claims = make_test_claims("tenant", "doc", [DocWrite], 2000)
+  jwt.validate_read_access(claims, "tenant", "doc", 1500)
+  |> assert_error_variant(fn(err) {
+    let assert jwt.MissingScope(required, _) = err
+    required |> expect.to_equal(DocRead)
+  })
+}
+
+pub fn validate_write_access_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead, DocWrite], 2000)
+  jwt.validate_write_access(claims, "tenant", "doc", 1500) |> expect.to_be_ok()
+}
+
+pub fn validate_write_access_missing_write_scope_test() {
+  let claims = make_test_claims("tenant", "doc", [DocRead], 2000)
+  jwt.validate_write_access(claims, "tenant", "doc", 1500)
+  |> assert_error_variant(fn(err) {
+    let assert jwt.MissingScope(required, _) = err
+    required |> expect.to_equal(DocWrite)
+  })
+}
+
+pub fn validate_summary_access_test() {
+  let claims =
+    make_test_claims("tenant", "doc", [DocRead, SummaryWrite], 2000)
+  jwt.validate_summary_access(claims, "tenant", "doc", 1500)
+  |> expect.to_be_ok()
+}
+
+pub fn format_error_test() {
+  jwt.format_error(jwt.TokenExpired(1000, 1500))
+  |> expect.to_equal("Token expired at 1000 (current time: 1500)")
+}
+
+pub fn error_to_http_code_test() {
+  jwt.error_to_http_code(jwt.TokenExpired(0, 0)) |> expect.to_equal(401)
+  jwt.error_to_http_code(jwt.TenantMismatch("", "")) |> expect.to_equal(403)
+  jwt.error_to_http_code(jwt.DocumentMismatch("", "")) |> expect.to_equal(403)
+  jwt.error_to_http_code(jwt.MissingScope(DocRead, [])) |> expect.to_equal(403)
+  jwt.error_to_http_code(jwt.MissingClaim("")) |> expect.to_equal(401)
+  jwt.error_to_http_code(jwt.InvalidClaim("", "")) |> expect.to_equal(401)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,7 +235,7 @@ pub fn mint_and_verify_signature_roundtrip_test() {
     signet.mint_token(
       "tenant-1",
       "doc-1",
-      types.scopes_to_strings([DocRead, DocWrite]),
+      [DocRead, DocWrite],
       "user-1",
       "secret",
       1000,
@@ -48,15 +247,14 @@ pub fn mint_and_verify_signature_roundtrip_test() {
       claims.document_id |> expect.to_equal("doc-1")
       claims.user.id |> expect.to_equal("user-1")
       claims.expiration |> expect.to_equal(4600)
-      claims.scopes |> expect.to_equal(["doc:read", "doc:write"])
+      claims.scopes |> expect.to_equal([DocRead, DocWrite])
     }
     Error(_) -> expect.to_be_true(False)
   }
 }
 
 pub fn verify_signature_rejects_wrong_secret_test() {
-  let token =
-    signet.mint_token("t", "d", ["doc:read"], "u", "right", 1000, 3600)
+  let token = signet.mint_token("t", "d", [DocRead], "u", "right", 1000, 3600)
   let rejected = case signet.verify_signature(token, "wrong") {
     Error(jwt.BadSignature) -> True
     _ -> False
@@ -93,7 +291,7 @@ pub fn validate_write_access_end_to_end_test() {
     signet.mint_token(
       "tenant-1",
       "doc-1",
-      types.scopes_to_strings([DocRead, DocWrite]),
+      [DocRead, DocWrite],
       "user-1",
       "secret",
       1000,

@@ -28,15 +28,7 @@ import signet/jwt
 import signet/types.{DocRead, DocWrite}
 
 let token =
-  jwt.mint_token(
-    "tenant-1",
-    "doc-1",
-    types.scopes_to_strings([DocRead, DocWrite]),
-    "user-1",
-    secret,
-    now,
-    3600,
-  )
+  jwt.mint_token("tenant-1", "doc-1", [DocRead, DocWrite], "user-1", secret, now, 3600)
 
 case jwt.verify_signature(token, secret) {
   Ok(claims) -> jwt.validate_write_access(claims, "tenant-1", "doc-1", now)

@@ -30,7 +30,7 @@ pub type Scope {
 pub type TokenClaims {
   TokenClaims(
     document_id: String,
-    scopes: List(String),
+    scopes: List(Scope),
     tenant_id: String,
     user: User,
     issued_at: Int,
