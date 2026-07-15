@@ -1,0 +1,15 @@
+name = "signet"
+version = "0.1.0"
+description = "Fluid Framework token primitives: claims, HS256 JWT crypto, and claim validation"
+licences = ["MIT"]
+repository = { type = "github", user = "tylerbutler", repo = "signet" }
+gleam = ">= 1.7.0"
+target = "erlang"
+
+[dependencies]
+gleam_stdlib = ">= 0.62.0 and < 2.0.0"
+gleam_json = ">= 3.0.0 and < 4.0.0"
+gleam_crypto = ">= 1.0.0 and < 2.0.0"
+
+[dev-dependencies]
+startest = ">= 0.8.0 and < 1.0.0"
