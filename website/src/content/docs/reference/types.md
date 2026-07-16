@@ -5,8 +5,7 @@ description: The Fluid document-token types — user identity, authorization sco
 
 The `signet/types` module holds the token domain: a user identity, the
 authorization scopes, and the decoded claims. `TokenClaims` mirrors the
-Fluid / Routerlicious wire shape, consolidated from `spillway/types`,
-`floodgate/auth`, and `levee_auth/token` (see ADR-007).
+Fluid / Routerlicious wire shape.
 
 ## Types
 

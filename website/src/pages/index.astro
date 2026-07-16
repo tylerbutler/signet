@@ -53,8 +53,8 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
         <p class="hero__lede reveal" style="--d:150ms">
           signet is the shared implementation of Fluid document-token handling —
           HS256 minting, constant-time verification, and strict claim validation.
-          One codebase your whole stack signs against, instead of three copies
-          drifting apart.
+          One codebase your whole stack signs against — the same seal on every
+          token.
         </p>
         <div class="hero__cta reveal" style="--d:230ms">
           <a class="btn btn--wax" href="/quickstart/">Read the docs</a>
@@ -79,47 +79,6 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
       </div>
     </div>
   </div>
-
-  <!-- ================= THE PROBLEM ================= -->
-  <section class="band">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Three copies. One seal.</h2>
-        <p class="lede">
-          The same Fluid document token was minted and verified in three places —
-          each stack carrying its own subtly different code, free to drift. signet
-          is the single implementation they now share, consolidated per
-          <a href={`${repo}#`}>Levee ADR-007</a>.
-        </p>
-      </div>
-
-      <div class="merge">
-        <ul class="merge__from" aria-label="Consolidated implementations">
-          <li><code>spillway/jwt</code></li>
-          <li><code>floodgate/auth</code></li>
-          <li><code>levee_auth/token</code></li>
-        </ul>
-        <div class="merge__arrow" aria-hidden="true">
-          <svg viewBox="0 0 80 24" width="80" height="24" fill="none">
-            <path d="M2 12h64" stroke="var(--wax)" stroke-width="1.5" />
-            <path d="M60 5l10 7-10 7" stroke="var(--wax)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <div class="merge__to">
-          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <circle cx="16" cy="16" r="15" stroke="var(--wax-ink)" stroke-width="1.4" />
-            <circle cx="16" cy="16" r="11.4" stroke="var(--wax-ink)" stroke-width="0.9" opacity="0.45" />
-            <path d="M20.6 11.4c-1.5-1.5-4.3-1.8-6-.5-1.7 1.3-1.5 3.4.6 4.4 1.3.6 3.2 1 4.2 1.8 2 1.5 1.4 3.9-1 4.9-1.9.8-4.6.4-6.2-1"
-              stroke="var(--ink-strong)" stroke-width="1.9" stroke-linecap="round" fill="none" />
-          </svg>
-          <div>
-            <strong>signet</strong>
-            <span>one codebase</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ================= THE SEQUENCE (earned numbering) ================= -->
   <section class="band band--surface">
@@ -407,57 +366,6 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
   .lede a { color: var(--wax-ink); text-underline-offset: 0.18em; }
   .band--ink .lede a { color: var(--wax-on-ink); }
 
-  /* ---------- MERGE DIAGRAM ---------- */
-  .merge {
-    display: grid;
-    grid-template-columns: auto auto auto;
-    align-items: center;
-    justify-content: start;
-    gap: clamp(1rem, 4vw, 2.5rem);
-  }
-  .merge__from {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.6rem;
-  }
-  .merge__from li {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-  }
-  .merge__from code {
-    color: var(--muted);
-    text-decoration: line-through;
-    text-decoration-color: var(--wax-line);
-    padding: 0.3rem 0.7rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-1);
-    display: inline-block;
-    background: var(--paper);
-  }
-  .merge__arrow svg { display: block; }
-  .merge__to {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.9rem 1.2rem;
-    border: 1.5px solid var(--wax-line);
-    border-radius: var(--radius-3);
-    background: var(--wax-soft);
-  }
-  .merge__to strong {
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    letter-spacing: -0.02em;
-    color: var(--ink-strong);
-    display: block;
-  }
-  .merge__to span {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
 
   /* ---------- MOVEMENTS ---------- */
   .movements {
@@ -606,8 +514,6 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
   }
   @media (max-width: 560px) {
     .nav__hide-sm { display: none; }
-    .merge { grid-template-columns: 1fr; justify-items: start; }
-    .merge__arrow { transform: rotate(90deg); margin-left: 1rem; }
   }
 
   /* ---------- MOTION (enhances an already-visible default) ---------- */
