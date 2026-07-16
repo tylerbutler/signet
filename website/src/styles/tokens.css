@@ -33,30 +33,30 @@
   --line-strong: oklch(0.83 0.012 40);
 
   /* ---- Crimson (primary brand: links, interaction) ----------------------- */
-  --primary: oklch(0.5 0.19 18); /* fills, marks */
-  --primary-ink: oklch(0.46 0.19 18); /* text links (>=4.5:1 on paper) */
-  --primary-strong: oklch(0.4 0.19 18); /* hover / pressed */
+  --primary: oklch(0.45 0.19 18); /* fills, marks */
+  --primary-ink: oklch(0.43 0.19 18); /* text links (>=4.5:1 on paper) */
+  --primary-strong: oklch(0.37 0.18 18); /* hover / pressed */
   --primary-soft: oklch(0.955 0.03 22); /* wash background */
   --primary-line: oklch(0.86 0.06 22);
 
   /* ---- Sealing wax (accent) ---------------------------------------------- */
-  --wax: oklch(0.565 0.2 23); /* the seal — badges, signature moments */
-  --wax-ink: oklch(0.5 0.2 23); /* wax as text (>=4.5:1 on paper) */
-  --wax-strong: oklch(0.47 0.2 23);
+  --wax: oklch(0.51 0.21 23); /* the seal — badges, signature moments */
+  --wax-ink: oklch(0.47 0.2 23); /* wax as text (>=4.5:1 on paper) */
+  --wax-strong: oklch(0.43 0.2 23);
   --wax-soft: oklch(0.958 0.03 23); /* wax wash background */
   --wax-line: oklch(0.88 0.07 23);
 
   /* ---- Deep oxblood (drenched dark hero + dark sections) ----------------- */
-  --ink-bg: oklch(0.175 0.07 25); /* the dark sheet — dried blood */
-  --ink-bg-2: oklch(0.225 0.08 25); /* elevated on dark */
-  --ink-bg-3: oklch(0.275 0.085 25); /* cards on dark */
+  --ink-bg: oklch(0.145 0.075 25); /* the dark sheet — dried blood */
+  --ink-bg-2: oklch(0.195 0.08 25); /* elevated on dark */
+  --ink-bg-3: oklch(0.245 0.085 25); /* cards on dark */
   --on-ink: oklch(0.95 0.012 40); /* body text on deep oxblood */
-  --on-ink-muted: oklch(0.76 0.03 40); /* secondary on deep oxblood */
-  --on-ink-faint: oklch(0.62 0.03 40);
-  --primary-on-ink: oklch(0.8 0.15 25); /* crimson, brightened for dark */
-  --wax-on-ink: oklch(0.72 0.2 25); /* wax, brightened for dark */
-  --line-on-ink: oklch(0.36 0.05 25);
-  --line-on-ink-soft: oklch(0.3 0.04 25);
+  --on-ink-muted: oklch(0.75 0.03 40); /* secondary on deep oxblood */
+  --on-ink-faint: oklch(0.6 0.03 40);
+  --primary-on-ink: oklch(0.74 0.16 22); /* crimson, brightened for dark */
+  --wax-on-ink: oklch(0.67 0.2 25); /* wax, brightened for dark */
+  --line-on-ink: oklch(0.33 0.05 25);
+  --line-on-ink-soft: oklch(0.27 0.04 25);
 
   /* ---- Semantic (validation states in the playground) -------------------- */
   --ok: oklch(0.52 0.13 155); /* pass — a considered green, not lime */
