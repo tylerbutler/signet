@@ -283,13 +283,13 @@ signet = { git = "${repo}.git", ref = "${pinnedRef.slice(0, 12)}…" }`;
     position: relative;
     display: grid;
     place-items: center;
-    filter: drop-shadow(0 20px 50px oklch(0.575 0.185 33 / 0.28));
+    filter: drop-shadow(0 20px 50px oklch(0.565 0.2 23 / 0.28));
   }
   .seal::before {
     content: "";
     position: absolute;
     inset: -12%;
-    background: radial-gradient(circle, oklch(0.575 0.185 33 / 0.22), transparent 68%);
+    background: radial-gradient(circle, oklch(0.565 0.2 23 / 0.22), transparent 68%);
     z-index: 0;
   }
   .seal svg { position: relative; z-index: 1; width: clamp(220px, 30vw, 330px); height: auto; }

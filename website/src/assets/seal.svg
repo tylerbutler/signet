@@ -5,7 +5,7 @@
        stay legible on the opposite background if a manual toggle disagrees. */
     .seal-stroke { stroke: #a8301b; }
     @media (prefers-color-scheme: dark) {
-      .seal-stroke { stroke: #ef7a5f; }
+      .seal-stroke { stroke: #f2503d; }
     }
   </style>
   <circle class="seal-stroke" cx="16" cy="16" r="15" stroke-width="1.4"/>
