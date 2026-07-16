@@ -185,19 +185,19 @@ summary .group-label span {
 
 /* ---- Expressive Code frames: seal them in ink ------------------------- */
 .expressive-code {
-  /* editor frames */
+  /* editor frames — flat, so the tab bar matches the body */
   --ec-frm-edBg: var(--code-frame-bg);
-  --ec-frm-edTabBarBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+  --ec-frm-edTabBarBg: var(--code-frame-bg);
   --ec-frm-edTabBarBrdBtmCol: var(--line-on-ink-soft);
   --ec-frm-edActTabBg: var(--code-frame-bg);
   --ec-frm-edActTabIndTopCol: var(--wax-on-ink);
   --ec-frm-edTabBarBrdCol: transparent;
-  /* terminal frames (sh / bash blocks) — keep them dark ink too */
+  /* terminal frames (sh / bash blocks) — same flat dark panel */
   --ec-frm-trmBg: var(--code-frame-bg);
-  --ec-frm-trmTtbBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+  --ec-frm-trmTtbBg: var(--code-frame-bg);
   --ec-frm-trmTtbFg: var(--on-ink-muted);
   --ec-frm-trmTtbBrdBtmCol: var(--line-on-ink-soft);
-  --ec-frm-trmTtbDotsFg: var(--on-ink-faint);
+  --ec-frm-trmTtbDotsFg: var(--line-on-ink);
   /* shared */
   --ec-frm-frameBoxShdCssVal: var(--shadow-2);
   --ec-brdCol: var(--code-frame-line);
@@ -221,6 +221,18 @@ summary .group-label span {
   font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+/* Terminal frames (sh / bash blocks) default to a macOS-window look — three
+   traffic-light dots and a centered caption — which clashes with the clean
+   left-aligned editor tabs. Strip the dots and left-align the caption so both
+   frame kinds read as one system. */
+.expressive-code .frame.is-terminal .header::before {
+  display: none !important;
+}
+.expressive-code .frame.is-terminal .header {
+  justify-content: flex-start !important;
+  padding-inline-start: 1rem;
 }
 
 /* ---- Aside / callouts: full hairline + wax tint, never a side-stripe --- */

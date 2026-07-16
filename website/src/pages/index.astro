@@ -486,7 +486,7 @@ signet = { git = "${repo}.git", ref = "${pinnedRef.slice(0, 12)}…" }`;
   .expressive-code {
     --code-frame-bg: oklch(0.13 0.06 25);
     --ec-frm-edBg: var(--code-frame-bg);
-    --ec-frm-edTabBarBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+    --ec-frm-edTabBarBg: var(--code-frame-bg);
     --ec-frm-edActTabBg: var(--code-frame-bg);
     --ec-frm-edActTabIndTopCol: var(--wax-on-ink);
     --ec-frm-edTabBarBrdCol: transparent;
