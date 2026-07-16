@@ -1,24 +1,23 @@
 ---
+import { Code } from "astro-expressive-code/components";
 import Landing from "../layouts/Landing.astro";
 import Playground from "../components/Playground.astro";
 
 const repo = "https://github.com/tylerbutler/signet";
 const pinnedRef = "6ea697d3d1d6c5ab60e214414fbfbb134b355a8c";
 
-// Rendered via set:html so Astro doesn't parse the literal Gleam / TOML braces
-// as JSX expressions.
-const authorizeCode = `<span class="c-kw">import</span> signet/jwt
-<span class="c-kw">import</span> signet/types.{DocWrite}
+const authorizeCode = `import signet/jwt
+import signet/types.{DocWrite}
 
-<span class="c-kw">pub fn</span> <span class="c-fn">authorize</span>(token, secret, tenant, doc, now) {
-  <span class="c-kw">case</span> jwt.<span class="c-fn">verify_signature</span>(token, secret) {
-    <span class="c-ok">Ok</span>(claims) -> jwt.<span class="c-fn">validate_write_access</span>(claims, tenant, doc, now)
-    <span class="c-err">Error</span>(_) -> <span class="c-err">Error</span>(jwt.MissingClaim(<span class="c-str">"signature"</span>))
+pub fn authorize(token, secret, tenant, doc, now) {
+  case jwt.verify_signature(token, secret) {
+    Ok(claims) -> jwt.validate_write_access(claims, tenant, doc, now)
+    Error(_) -> Error(jwt.MissingClaim("signature"))
   }
 }`;
 
 const tomlCode = `[dependencies]
-signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-str">"${pinnedRef.slice(0, 12)}…"</span> }`;
+signet = { git = "${repo}.git", ref = "${pinnedRef.slice(0, 12)}…" }`;
 ---
 
 <Landing>
@@ -113,12 +112,7 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
         </li>
       </ol>
 
-      <div class="sample">
-        <div class="sample__bar">
-          <span class="sample__dot"></span>authorize.gleam
-        </div>
-        <pre class="sample__code"><code set:html={authorizeCode}></code></pre>
-      </div>
+      <Code code={authorizeCode} lang="gleam" title="authorize.gleam" />
     </div>
   </section>
 
@@ -151,10 +145,7 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
         <a class="btn btn--wax" href="/quickstart/">Read the quickstart</a>
       </div>
       <div class="install__code">
-        <div class="sample sample--ink">
-          <div class="sample__bar"><span class="sample__dot"></span>gleam.toml</div>
-          <pre class="sample__code"><code set:html={tomlCode}></code></pre>
-        </div>
+        <Code code={tomlCode} lang="toml" title="gleam.toml" />
       </div>
     </div>
   </section>
@@ -193,9 +184,9 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
   .hero {
     position: relative;
     background:
-      radial-gradient(120% 90% at 85% -10%, oklch(0.28 0.05 300 / 0.55), transparent 60%),
-      radial-gradient(90% 80% at 0% 110%, oklch(0.3 0.06 33 / 0.35), transparent 55%),
-      var(--ink-bg);
+      radial-gradient(120% 90% at 85% -10%, oklch(0.32 0.12 25 / 0.55), transparent 60%),
+      radial-gradient(90% 80% at 0% 110%, oklch(0.26 0.1 15 / 0.4), transparent 55%),
+      oklch(0.17 0.08 25);
     color: var(--on-ink);
     overflow: hidden;
   }
@@ -405,48 +396,6 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
     word-break: break-word;
   }
 
-  /* ---------- CODE SAMPLE ---------- */
-  .sample {
-    border-radius: var(--radius-3);
-    overflow: hidden;
-    box-shadow: var(--shadow-2);
-    border: 1px solid var(--line);
-  }
-  .sample--ink { border-color: var(--line-on-ink); }
-  .sample__bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: oklch(0.155 0.025 262);
-    color: var(--on-ink-muted);
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    padding: 0.6rem 1rem;
-  }
-  .sample__dot {
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 50%;
-    background: var(--wax);
-    box-shadow: 0 0 0 3px oklch(0.575 0.185 33 / 0.2);
-  }
-  .sample__code {
-    margin: 0;
-    background: var(--ink-bg);
-    color: var(--on-ink);
-    font-family: var(--font-mono);
-    font-size: 0.84rem;
-    line-height: 1.7;
-    padding: 1.2rem 1.3rem;
-    overflow-x: auto;
-  }
-  .sample__code code { font-family: inherit; }
-  .c-kw { color: var(--wax-on-ink); font-weight: 600; }
-  .c-fn { color: var(--primary-on-ink); }
-  .c-str { color: oklch(0.82 0.11 150); }
-  .c-ok { color: oklch(0.8 0.13 155); }
-  .c-err { color: var(--wax-on-ink); }
-
   /* ---------- INSTALL ---------- */
   .install {
     display: grid;
@@ -528,5 +477,35 @@ signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-
     @keyframes rise {
       to { opacity: 1; transform: none; }
     }
+  }
+</style>
+
+<!-- Expressive Code frames on the landing page (Starlight's docs CSS isn't
+     loaded here), sealed in the same oxblood as the docs code blocks. -->
+<style is:global>
+  .expressive-code {
+    --code-frame-bg: oklch(0.155 0.06 25);
+    --ec-frm-edBg: var(--code-frame-bg);
+    --ec-frm-edTabBarBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+    --ec-frm-edActTabBg: var(--code-frame-bg);
+    --ec-frm-edActTabIndTopCol: var(--wax-on-ink);
+    --ec-frm-edTabBarBrdCol: transparent;
+    --ec-frm-edTabBarBrdBtmCol: var(--line-on-ink-soft);
+    --ec-frm-frameBoxShdCssVal: var(--shadow-2);
+    --ec-uiFontFamily: var(--font-display);
+    --ec-codeFontFamily: var(--font-mono);
+    --ec-codeFontSize: 0.86rem;
+    --ec-codeLineHt: 1.62;
+    border-radius: var(--radius-3);
+    margin: 0;
+  }
+  .expressive-code .frame,
+  .expressive-code .frame pre {
+    border-radius: var(--radius-3);
+  }
+  .expressive-code .frame.has-title .title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 </style>

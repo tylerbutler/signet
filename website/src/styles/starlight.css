@@ -16,31 +16,31 @@
 
 /* ---- Dark mode (Starlight default :root) — deep ink ------------------- */
 :root {
-  --sl-color-white: oklch(0.97 0.01 262);
-  --sl-color-gray-1: oklch(0.9 0.014 262);
+  --sl-color-white: oklch(0.97 0.01 40);
+  --sl-color-gray-1: oklch(0.9 0.014 40);
   --sl-color-gray-2: var(--on-ink);
   --sl-color-gray-3: var(--on-ink-muted);
-  --sl-color-gray-4: oklch(0.55 0.018 262);
+  --sl-color-gray-4: oklch(0.55 0.02 40);
   --sl-color-gray-5: var(--line-on-ink);
   --sl-color-gray-6: var(--line-on-ink-soft);
   --sl-color-black: var(--ink-bg);
 
-  --sl-color-accent-low: oklch(0.3 0.075 258);
+  --sl-color-accent-low: oklch(0.3 0.09 22);
   --sl-color-accent: var(--primary-on-ink);
-  --sl-color-accent-high: oklch(0.87 0.085 258);
+  --sl-color-accent-high: oklch(0.87 0.08 22);
 
   --sl-color-text: var(--on-ink);
   --sl-color-text-accent: var(--primary-on-ink);
   --sl-color-bg: var(--ink-bg);
-  --sl-color-bg-nav: oklch(0.185 0.028 262 / 0.72);
+  --sl-color-bg-nav: oklch(0.175 0.07 25 / 0.72);
   --sl-color-bg-sidebar: var(--ink-bg);
-  --sl-color-bg-inline-code: oklch(0.28 0.03 262);
+  --sl-color-bg-inline-code: oklch(0.28 0.08 25);
   --sl-color-hairline: var(--line-on-ink-soft);
   --sl-color-hairline-light: var(--line-on-ink-soft);
-  --sl-color-hairline-shade: oklch(0.14 0.024 262);
+  --sl-color-hairline-shade: oklch(0.14 0.05 25);
 
   --wax-doc: var(--wax-on-ink);
-  --code-frame-bg: oklch(0.155 0.025 262);
+  --code-frame-bg: oklch(0.155 0.06 25);
   --code-frame-line: var(--line-on-ink-soft);
 }
 
@@ -48,9 +48,9 @@
 :root[data-theme="light"] {
   --sl-color-white: var(--ink-strong);
   --sl-color-gray-1: var(--ink);
-  --sl-color-gray-2: oklch(0.35 0.025 262);
+  --sl-color-gray-2: oklch(0.35 0.025 25);
   --sl-color-gray-3: var(--muted);
-  --sl-color-gray-4: oklch(0.63 0.018 262);
+  --sl-color-gray-4: oklch(0.63 0.02 40);
   --sl-color-gray-5: var(--line-strong);
   --sl-color-gray-6: var(--line);
   --sl-color-gray-7: var(--surface);
@@ -71,7 +71,7 @@
   --sl-color-hairline-shade: var(--line);
 
   --wax-doc: var(--wax-ink);
-  --code-frame-bg: oklch(0.205 0.028 262);
+  --code-frame-bg: oklch(0.205 0.07 25);
   --code-frame-line: transparent;
 }
 
