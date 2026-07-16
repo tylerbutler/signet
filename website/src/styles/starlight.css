@@ -16,31 +16,31 @@
 
 /* ---- Dark mode (Starlight default :root) — deep ink ------------------- */
 :root {
-  --sl-color-white: oklch(0.97 0.01 262);
-  --sl-color-gray-1: oklch(0.9 0.014 262);
+  --sl-color-white: oklch(0.97 0.01 40);
+  --sl-color-gray-1: oklch(0.9 0.014 40);
   --sl-color-gray-2: var(--on-ink);
   --sl-color-gray-3: var(--on-ink-muted);
-  --sl-color-gray-4: oklch(0.55 0.018 262);
+  --sl-color-gray-4: oklch(0.55 0.02 40);
   --sl-color-gray-5: var(--line-on-ink);
   --sl-color-gray-6: var(--line-on-ink-soft);
   --sl-color-black: var(--ink-bg);
 
-  --sl-color-accent-low: oklch(0.3 0.075 258);
+  --sl-color-accent-low: oklch(0.3 0.09 22);
   --sl-color-accent: var(--primary-on-ink);
-  --sl-color-accent-high: oklch(0.87 0.085 258);
+  --sl-color-accent-high: oklch(0.87 0.08 22);
 
   --sl-color-text: var(--on-ink);
   --sl-color-text-accent: var(--primary-on-ink);
   --sl-color-bg: var(--ink-bg);
-  --sl-color-bg-nav: oklch(0.185 0.028 262 / 0.72);
+  --sl-color-bg-nav: oklch(0.145 0.075 25 / 0.72);
   --sl-color-bg-sidebar: var(--ink-bg);
-  --sl-color-bg-inline-code: oklch(0.28 0.03 262);
+  --sl-color-bg-inline-code: oklch(0.25 0.08 25);
   --sl-color-hairline: var(--line-on-ink-soft);
   --sl-color-hairline-light: var(--line-on-ink-soft);
-  --sl-color-hairline-shade: oklch(0.14 0.024 262);
+  --sl-color-hairline-shade: oklch(0.115 0.05 25);
 
   --wax-doc: var(--wax-on-ink);
-  --code-frame-bg: oklch(0.155 0.025 262);
+  --code-frame-bg: oklch(0.13 0.06 25);
   --code-frame-line: var(--line-on-ink-soft);
 }
 
@@ -48,9 +48,9 @@
 :root[data-theme="light"] {
   --sl-color-white: var(--ink-strong);
   --sl-color-gray-1: var(--ink);
-  --sl-color-gray-2: oklch(0.35 0.025 262);
+  --sl-color-gray-2: oklch(0.35 0.025 25);
   --sl-color-gray-3: var(--muted);
-  --sl-color-gray-4: oklch(0.63 0.018 262);
+  --sl-color-gray-4: oklch(0.63 0.02 40);
   --sl-color-gray-5: var(--line-strong);
   --sl-color-gray-6: var(--line);
   --sl-color-gray-7: var(--surface);
@@ -71,7 +71,7 @@
   --sl-color-hairline-shade: var(--line);
 
   --wax-doc: var(--wax-ink);
-  --code-frame-bg: oklch(0.205 0.028 262);
+  --code-frame-bg: oklch(0.18 0.07 25);
   --code-frame-line: transparent;
 }
 
@@ -185,19 +185,19 @@ summary .group-label span {
 
 /* ---- Expressive Code frames: seal them in ink ------------------------- */
 .expressive-code {
-  /* editor frames */
+  /* editor frames — flat, so the tab bar matches the body */
   --ec-frm-edBg: var(--code-frame-bg);
-  --ec-frm-edTabBarBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+  --ec-frm-edTabBarBg: var(--code-frame-bg);
   --ec-frm-edTabBarBrdBtmCol: var(--line-on-ink-soft);
   --ec-frm-edActTabBg: var(--code-frame-bg);
   --ec-frm-edActTabIndTopCol: var(--wax-on-ink);
   --ec-frm-edTabBarBrdCol: transparent;
-  /* terminal frames (sh / bash blocks) — keep them dark ink too */
+  /* terminal frames (sh / bash blocks) — same flat dark panel */
   --ec-frm-trmBg: var(--code-frame-bg);
-  --ec-frm-trmTtbBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+  --ec-frm-trmTtbBg: var(--code-frame-bg);
   --ec-frm-trmTtbFg: var(--on-ink-muted);
   --ec-frm-trmTtbBrdBtmCol: var(--line-on-ink-soft);
-  --ec-frm-trmTtbDotsFg: var(--on-ink-faint);
+  --ec-frm-trmTtbDotsFg: var(--line-on-ink);
   /* shared */
   --ec-frm-frameBoxShdCssVal: var(--shadow-2);
   --ec-brdCol: var(--code-frame-line);
@@ -221,6 +221,18 @@ summary .group-label span {
   font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+/* Terminal frames (sh / bash blocks) default to a macOS-window look — three
+   traffic-light dots and a centered caption — which clashes with the clean
+   left-aligned editor tabs. Strip the dots and left-align the caption so both
+   frame kinds read as one system. */
+.expressive-code .frame.is-terminal .header::before {
+  display: none !important;
+}
+.expressive-code .frame.is-terminal .header {
+  justify-content: flex-start !important;
+  padding-inline-start: 1rem;
 }
 
 /* ---- Aside / callouts: full hairline + wax tint, never a side-stripe --- */

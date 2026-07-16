@@ -1,7 +1,8 @@
 /* ============================================================================
    signet — "Ink & Wax" design tokens
-   A signet seals a document in ink and wax. The palette is exactly that:
-   blue-black writing ink (cobalt) + sealing-wax vermillion, on paper white.
+   A signet seals a document in wax. The palette is drenched in it: oxblood
+   sealing-wax red across the darks, a deep crimson primary, and a brighter
+   vermillion accent, on warm paper white.
    All color in OKLCH. Variables only — no global element styles live here, so
    this file is safe to load inside both the custom landing and Starlight.
    ============================================================================ */
@@ -17,45 +18,45 @@
 
   /* ---- Paper (light surfaces) -------------------------------------------- */
   --paper: oklch(1 0 0); /* pure white — the sheet */
-  --surface: oklch(0.976 0.006 258); /* faint cool laid paper */
-  --surface-2: oklch(0.955 0.009 258); /* recessed panels */
-  --surface-3: oklch(0.93 0.011 258);
+  --surface: oklch(0.976 0.006 40); /* faint warm laid paper */
+  --surface-2: oklch(0.955 0.009 40); /* recessed panels */
+  --surface-3: oklch(0.93 0.011 40);
 
   /* ---- Ink (text on paper) ----------------------------------------------- */
-  --ink: oklch(0.24 0.026 262); /* body text — blue-black */
-  --ink-strong: oklch(0.18 0.03 262); /* headings */
-  --muted: oklch(0.515 0.023 262); /* secondary text (>=4.5:1 on paper) */
-  --muted-2: oklch(0.56 0.02 262); /* faint metadata — still >=4.5:1 on paper */
+  --ink: oklch(0.24 0.026 25); /* body text — warm near-black */
+  --ink-strong: oklch(0.18 0.03 25); /* headings */
+  --muted: oklch(0.515 0.023 25); /* secondary text (>=4.5:1 on paper) */
+  --muted-2: oklch(0.56 0.02 25); /* faint metadata — still >=4.5:1 on paper */
 
   /* ---- Hairlines --------------------------------------------------------- */
-  --line: oklch(0.9 0.008 262);
-  --line-strong: oklch(0.83 0.012 262);
+  --line: oklch(0.9 0.008 40);
+  --line-strong: oklch(0.83 0.012 40);
 
-  /* ---- Cobalt ink (primary brand: links, interaction) -------------------- */
-  --primary: oklch(0.5 0.15 258); /* fills, marks */
-  --primary-ink: oklch(0.45 0.152 258); /* text links (>=4.5:1 on paper) */
-  --primary-strong: oklch(0.4 0.15 258); /* hover / pressed */
-  --primary-soft: oklch(0.955 0.028 258); /* wash background */
-  --primary-line: oklch(0.86 0.05 258);
+  /* ---- Crimson (primary brand: links, interaction) ----------------------- */
+  --primary: oklch(0.45 0.19 18); /* fills, marks */
+  --primary-ink: oklch(0.43 0.19 18); /* text links (>=4.5:1 on paper) */
+  --primary-strong: oklch(0.37 0.18 18); /* hover / pressed */
+  --primary-soft: oklch(0.955 0.03 22); /* wash background */
+  --primary-line: oklch(0.86 0.06 22);
 
   /* ---- Sealing wax (accent) ---------------------------------------------- */
-  --wax: oklch(0.575 0.185 33); /* the seal — badges, signature moments */
-  --wax-ink: oklch(0.505 0.19 33); /* wax as text (>=4.5:1 on paper) */
-  --wax-strong: oklch(0.5 0.19 33);
-  --wax-soft: oklch(0.958 0.03 40); /* wax wash background */
-  --wax-line: oklch(0.88 0.07 40);
+  --wax: oklch(0.51 0.21 23); /* the seal — badges, signature moments */
+  --wax-ink: oklch(0.47 0.2 23); /* wax as text (>=4.5:1 on paper) */
+  --wax-strong: oklch(0.43 0.2 23);
+  --wax-soft: oklch(0.958 0.03 23); /* wax wash background */
+  --wax-line: oklch(0.88 0.07 23);
 
-  /* ---- Deep ink (drenched dark hero + dark sections) --------------------- */
-  --ink-bg: oklch(0.185 0.028 262); /* the dark sheet */
-  --ink-bg-2: oklch(0.23 0.03 262); /* elevated on dark */
-  --ink-bg-3: oklch(0.275 0.032 262); /* cards on dark */
-  --on-ink: oklch(0.95 0.012 262); /* body text on deep ink */
-  --on-ink-muted: oklch(0.74 0.02 262); /* secondary on deep ink */
-  --on-ink-faint: oklch(0.6 0.018 262);
-  --primary-on-ink: oklch(0.76 0.13 258); /* cobalt, brightened for dark */
-  --wax-on-ink: oklch(0.72 0.17 42); /* wax, brightened for dark */
-  --line-on-ink: oklch(0.33 0.02 262);
-  --line-on-ink-soft: oklch(0.27 0.018 262);
+  /* ---- Deep oxblood (drenched dark hero + dark sections) ----------------- */
+  --ink-bg: oklch(0.145 0.075 25); /* the dark sheet — dried blood */
+  --ink-bg-2: oklch(0.195 0.08 25); /* elevated on dark */
+  --ink-bg-3: oklch(0.245 0.085 25); /* cards on dark */
+  --on-ink: oklch(0.95 0.012 40); /* body text on deep oxblood */
+  --on-ink-muted: oklch(0.75 0.03 40); /* secondary on deep oxblood */
+  --on-ink-faint: oklch(0.6 0.03 40);
+  --primary-on-ink: oklch(0.74 0.16 22); /* crimson, brightened for dark */
+  --wax-on-ink: oklch(0.63 0.22 22); /* wax, brightened for dark — matches the button red, not orange */
+  --line-on-ink: oklch(0.33 0.05 25);
+  --line-on-ink-soft: oklch(0.27 0.04 25);
 
   /* ---- Semantic (validation states in the playground) -------------------- */
   --ok: oklch(0.52 0.13 155); /* pass — a considered green, not lime */
@@ -94,12 +95,12 @@
   --radius-pill: 999px;
 
   /* ---- Elevation (ink-tinted shadow) ------------------------------------- */
-  --shadow-1: 0 1px 2px oklch(0.2 0.03 262 / 0.06),
-    0 3px 10px oklch(0.2 0.03 262 / 0.05);
-  --shadow-2: 0 2px 6px oklch(0.2 0.03 262 / 0.07),
-    0 12px 34px oklch(0.2 0.03 262 / 0.09);
-  --shadow-wax: 0 10px 30px oklch(0.575 0.185 33 / 0.22);
-  --shadow-ink: 0 24px 70px oklch(0.12 0.03 262 / 0.5);
+  --shadow-1: 0 1px 2px oklch(0.2 0.05 25 / 0.06),
+    0 3px 10px oklch(0.2 0.05 25 / 0.05);
+  --shadow-2: 0 2px 6px oklch(0.2 0.05 25 / 0.07),
+    0 12px 34px oklch(0.2 0.05 25 / 0.09);
+  --shadow-wax: 0 10px 30px oklch(0.565 0.2 23 / 0.22);
+  --shadow-ink: 0 24px 70px oklch(0.12 0.05 25 / 0.5);
 
   /* ---- Motion ------------------------------------------------------------ */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

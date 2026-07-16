@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-signet is a pure-Gleam library of Fluid Framework token primitives — document-token claims, HS256 JWT signing/verification, and claim validation — consolidated out of `spillway/jwt`, `floodgate/auth`, and `levee_auth/token` (see Levee ADR-007). Source in `src/signet/`, tests in `test/`. Consumed as a git-commit dependency (pinned `ref` in `gleam.toml`); **not published to Hex**.
+signet is a pure-Gleam library of Fluid Framework token primitives — document-token claims, HS256 JWT signing/verification, and claim validation — consolidated into one shared codebase. Source in `src/signet/`, tests in `test/`. Consumed as a git-commit dependency (pinned `ref` in `gleam.toml`); **not published to Hex**.
 
 ## Design Context
 
