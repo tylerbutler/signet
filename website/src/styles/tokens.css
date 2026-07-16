@@ -1,0 +1,122 @@
+/* ============================================================================
+   signet — "Ink & Wax" design tokens
+   A signet seals a document in ink and wax. The palette is exactly that:
+   blue-black writing ink (cobalt) + sealing-wax vermillion, on paper white.
+   All color in OKLCH. Variables only — no global element styles live here, so
+   this file is safe to load inside both the custom landing and Starlight.
+   ============================================================================ */
+
+:root {
+  /* ---- Typefaces (contrast-axis pairing) --------------------------------- */
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque",
+    system-ui, "Segoe UI", sans-serif;
+  --font-body: "Literata Variable", "Literata", Georgia, "Times New Roman",
+    serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace,
+    "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---- Paper (light surfaces) -------------------------------------------- */
+  --paper: oklch(1 0 0); /* pure white — the sheet */
+  --surface: oklch(0.976 0.006 258); /* faint cool laid paper */
+  --surface-2: oklch(0.955 0.009 258); /* recessed panels */
+  --surface-3: oklch(0.93 0.011 258);
+
+  /* ---- Ink (text on paper) ----------------------------------------------- */
+  --ink: oklch(0.24 0.026 262); /* body text — blue-black */
+  --ink-strong: oklch(0.18 0.03 262); /* headings */
+  --muted: oklch(0.515 0.023 262); /* secondary text (>=4.5:1 on paper) */
+  --muted-2: oklch(0.56 0.02 262); /* faint metadata — still >=4.5:1 on paper */
+
+  /* ---- Hairlines --------------------------------------------------------- */
+  --line: oklch(0.9 0.008 262);
+  --line-strong: oklch(0.83 0.012 262);
+
+  /* ---- Cobalt ink (primary brand: links, interaction) -------------------- */
+  --primary: oklch(0.5 0.15 258); /* fills, marks */
+  --primary-ink: oklch(0.45 0.152 258); /* text links (>=4.5:1 on paper) */
+  --primary-strong: oklch(0.4 0.15 258); /* hover / pressed */
+  --primary-soft: oklch(0.955 0.028 258); /* wash background */
+  --primary-line: oklch(0.86 0.05 258);
+
+  /* ---- Sealing wax (accent) ---------------------------------------------- */
+  --wax: oklch(0.575 0.185 33); /* the seal — badges, signature moments */
+  --wax-ink: oklch(0.505 0.19 33); /* wax as text (>=4.5:1 on paper) */
+  --wax-strong: oklch(0.5 0.19 33);
+  --wax-soft: oklch(0.958 0.03 40); /* wax wash background */
+  --wax-line: oklch(0.88 0.07 40);
+
+  /* ---- Deep ink (drenched dark hero + dark sections) --------------------- */
+  --ink-bg: oklch(0.185 0.028 262); /* the dark sheet */
+  --ink-bg-2: oklch(0.23 0.03 262); /* elevated on dark */
+  --ink-bg-3: oklch(0.275 0.032 262); /* cards on dark */
+  --on-ink: oklch(0.95 0.012 262); /* body text on deep ink */
+  --on-ink-muted: oklch(0.74 0.02 262); /* secondary on deep ink */
+  --on-ink-faint: oklch(0.6 0.018 262);
+  --primary-on-ink: oklch(0.76 0.13 258); /* cobalt, brightened for dark */
+  --wax-on-ink: oklch(0.72 0.17 42); /* wax, brightened for dark */
+  --line-on-ink: oklch(0.33 0.02 262);
+  --line-on-ink-soft: oklch(0.27 0.018 262);
+
+  /* ---- Semantic (validation states in the playground) -------------------- */
+  --ok: oklch(0.52 0.13 155); /* pass — a considered green, not lime */
+  --ok-soft: oklch(0.955 0.03 155);
+  --ok-on-ink: oklch(0.78 0.15 155);
+  --warn: var(--wax-ink); /* failures speak in wax */
+  --warn-soft: var(--wax-soft);
+
+  /* ---- Modular type scale (1.25) ----------------------------------------- */
+  --step--1: 0.8rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.5625rem;
+  --step-3: 1.9531rem;
+  --step-4: 2.4414rem;
+  --step-5: 3.0518rem;
+  /* fluid display — clamp max 4.7rem (< 6rem ceiling), ratio < 2.5 */
+  --display: clamp(2.7rem, 1.7rem + 4.1vw, 4.7rem);
+  --display-2: clamp(2rem, 1.45rem + 2.3vw, 3.15rem);
+
+  /* ---- Spacing (fluid where it earns rhythm) ----------------------------- */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-s: 1rem;
+  --space-m: 1.5rem;
+  --space-l: 2.5rem;
+  --space-xl: 4rem;
+  --space-2xl: clamp(4.5rem, 3rem + 6vw, 8rem);
+  --space-3xl: clamp(6rem, 4rem + 8vw, 11rem);
+
+  /* ---- Geometry (foundry-crisp, not bubbly) ------------------------------ */
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 14px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation (ink-tinted shadow) ------------------------------------- */
+  --shadow-1: 0 1px 2px oklch(0.2 0.03 262 / 0.06),
+    0 3px 10px oklch(0.2 0.03 262 / 0.05);
+  --shadow-2: 0 2px 6px oklch(0.2 0.03 262 / 0.07),
+    0 12px 34px oklch(0.2 0.03 262 / 0.09);
+  --shadow-wax: 0 10px 30px oklch(0.575 0.185 33 / 0.22);
+  --shadow-ink: 0 24px 70px oklch(0.12 0.03 262 / 0.5);
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --dur-1: 130ms;
+  --dur-2: 240ms;
+  --dur-3: 420ms;
+  --dur-4: 680ms;
+
+  /* ---- Semantic z-index scale -------------------------------------------- */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-overlay: 300;
+  --z-toast: 400;
+
+  /* measure */
+  --measure: 68ch;
+}

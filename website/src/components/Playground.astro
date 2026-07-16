@@ -1,0 +1,790 @@
+---
+// Live token playground — a faithful browser port of signet/jwt.
+// Real HMAC-SHA256 via the Web Crypto API; the mint / verify / validate logic
+// mirrors src/signet/jwt.gleam (strict ver "1.0", non-empty user.id, the
+// expiry -> tenant -> document -> scope validation order, the real errors and
+// HTTP codes). Nothing here is faked.
+---
+
+<div class="pg" id="signet-playground">
+  <div class="pg__grid">
+    <!-- ============ MINT ============ -->
+    <form class="pg__card" id="pg-mint" novalidate aria-labelledby="pg-mint-h">
+      <div class="pg__cardhead">
+        <span class="pg__step">01</span>
+        <h3 id="pg-mint-h">Mint</h3>
+        <p>Sign a document token with a secret.</p>
+      </div>
+
+      <div class="pg__fields">
+        <label class="pg__field pg__field--wide">
+          <span>Signing secret</span>
+          <input id="m-secret" type="text" value="s3cr3t-signing-key" autocomplete="off" spellcheck="false" />
+        </label>
+
+        <label class="pg__field">
+          <span>Tenant</span>
+          <input id="m-tenant" type="text" value="tenant-1" autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="pg__field">
+          <span>Document</span>
+          <input id="m-doc" type="text" value="doc-1" autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="pg__field">
+          <span>User</span>
+          <input id="m-user" type="text" value="user-1" autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="pg__field">
+          <span>Expires in <span class="pg__hint">(s)</span></span>
+          <input id="m-exp" type="number" value="3600" min="1" step="1" inputmode="numeric" />
+        </label>
+
+        <fieldset class="pg__field pg__field--wide pg__scopes">
+          <legend>Scopes</legend>
+          <label class="pg__chk"><input type="checkbox" value="doc:read" checked /><span>doc:read</span></label>
+          <label class="pg__chk"><input type="checkbox" value="doc:write" checked /><span>doc:write</span></label>
+          <label class="pg__chk"><input type="checkbox" value="summary:read" /><span>summary:read</span></label>
+          <label class="pg__chk"><input type="checkbox" value="summary:write" /><span>summary:write</span></label>
+        </fieldset>
+      </div>
+    </form>
+
+    <!-- ============ VERIFY ============ -->
+    <form class="pg__card" id="pg-verify" novalidate aria-labelledby="pg-verify-h">
+      <div class="pg__cardhead">
+        <span class="pg__step">02</span>
+        <h3 id="pg-verify-h">Verify &amp; validate</h3>
+        <p>Check the signature, then the claims.</p>
+      </div>
+
+      <div class="pg__fields">
+        <label class="pg__field">
+          <span>Verifying secret</span>
+          <input id="v-secret" type="text" value="s3cr3t-signing-key" autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="pg__field">
+          <span>Request tenant</span>
+          <input id="v-tenant" type="text" value="tenant-1" autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="pg__field">
+          <span>Request document</span>
+          <input id="v-doc" type="text" value="doc-1" autocomplete="off" spellcheck="false" />
+        </label>
+        <fieldset class="pg__field pg__access">
+          <legend>Required access</legend>
+          <label class="pg__radio"><input type="radio" name="v-access" value="connection" /><span>Connection</span></label>
+          <label class="pg__radio"><input type="radio" name="v-access" value="read" checked /><span>Read</span></label>
+          <label class="pg__radio"><input type="radio" name="v-access" value="write" /><span>Write</span></label>
+          <label class="pg__radio"><input type="radio" name="v-access" value="summary" /><span>Summary</span></label>
+        </fieldset>
+      </div>
+
+      <div class="pg__tamper">
+        <span class="pg__hint">Break it:</span>
+        <button type="button" id="v-tamper" class="pg__ghost">Tamper payload</button>
+        <button type="button" id="v-expire" class="pg__ghost">Expire it</button>
+        <button type="button" id="v-reset" class="pg__ghost">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============ TOKEN READOUT (ink strip) ============ -->
+  <div class="pg__wire" aria-live="polite">
+    <div class="pg__wirehead">
+      <span class="pg__wiretitle">signet token</span>
+      <span class="pg__legend">
+        <span class="k k--h">header</span>·<span class="k k--p">payload</span>·<span class="k k--s">signature</span>
+      </span>
+      <button type="button" id="pg-copy" class="pg__copy">Copy</button>
+    </div>
+    <code class="pg__token" id="pg-token" tabindex="0" aria-label="minted token"></code>
+  </div>
+
+  <!-- ============ RESULT ============ -->
+  <div class="pg__result" id="pg-result" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+  // ---- base64url ---------------------------------------------------------
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+
+  function b64urlFromBytes(bytes: Uint8Array): string {
+    let bin = "";
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function b64urlEncodeString(s: string): string {
+    return b64urlFromBytes(enc.encode(s));
+  }
+  function b64urlToBytes(s: string): Uint8Array | null {
+    try {
+      const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+      const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    } catch {
+      return null;
+    }
+  }
+  function b64urlDecodeString(s: string): string | null {
+    const bytes = b64urlToBytes(s);
+    if (!bytes) return null;
+    try {
+      return dec.decode(bytes);
+    } catch {
+      return null;
+    }
+  }
+
+  // ---- HMAC-SHA256 -------------------------------------------------------
+  async function hmac(secret: string, msg: string): Promise<Uint8Array> {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, enc.encode(msg));
+    return new Uint8Array(sig);
+  }
+  // constant-time compare, mirroring crypto.secure_compare
+  function secureCompare(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+    return diff === 0;
+  }
+
+  // ---- scopes ------------------------------------------------------------
+  const KNOWN_SCOPES = ["doc:read", "doc:write", "summary:read", "summary:write"];
+  const scopesFromStrings = (xs: string[]) => xs.filter((x) => KNOWN_SCOPES.includes(x));
+
+  // ---- mint (mirrors mint_token) -----------------------------------------
+  async function mintToken(o: {
+    tenant: string; documentId: string; scopes: string[]; userId: string;
+    secret: string; now: number; expiresIn: number;
+  }): Promise<string> {
+    const header = b64urlEncodeString(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+    const jtiBytes = crypto.getRandomValues(new Uint8Array(16));
+    const jti = Array.from(jtiBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+    // key order matches signet's json.object payload
+    const payloadObj = {
+      documentId: o.documentId,
+      tenantId: o.tenant,
+      scopes: o.scopes,
+      user: { id: o.userId },
+      ver: "1.0",
+      iat: o.now,
+      exp: o.now + o.expiresIn,
+      jti,
+    };
+    const payload = b64urlEncodeString(JSON.stringify(payloadObj));
+    const signed = header + "." + payload;
+    const signature = b64urlFromBytes(await hmac(o.secret, signed));
+    return signed + "." + signature;
+  }
+
+  // ---- verify (mirrors verify_signature + verify_header + parse_claims) ---
+  type Claims = {
+    documentId: string; tenantId: string; exp: number; iat: number;
+    scopes: string[]; user: { id: string; name: string }; ver: string;
+    jti: string | null;
+  };
+  type CryptoErr = "BadFormat" | "BadSignature";
+
+  async function verifySignature(
+    token: string, secret: string,
+  ): Promise<{ ok: true; claims: Claims } | { ok: false; error: CryptoErr }> {
+    if (secret === "") return { ok: false, error: "BadSignature" };
+    const parts = token.split(".");
+    if (parts.length !== 3) return { ok: false, error: "BadFormat" };
+    const [header, payload, signature] = parts;
+
+    // verify_header: alg must be HS256
+    const headerText = b64urlDecodeString(header);
+    if (!headerText) return { ok: false, error: "BadFormat" };
+    let alg: unknown;
+    try { alg = JSON.parse(headerText).alg; } catch { return { ok: false, error: "BadFormat" }; }
+    if (alg !== "HS256") return { ok: false, error: "BadFormat" };
+
+    const expected = await hmac(secret, header + "." + payload);
+    const actual = b64urlToBytes(signature);
+    if (!actual || !secureCompare(actual, expected)) return { ok: false, error: "BadSignature" };
+
+    const claims = parseClaims(payload);
+    if (!claims) return { ok: false, error: "BadFormat" };
+    return { ok: true, claims };
+  }
+
+  function parseClaims(payload: string): Claims | null {
+    const text = b64urlDecodeString(payload);
+    if (!text) return null;
+    let p: any;
+    try { p = JSON.parse(text); } catch { return null; }
+    if (typeof p?.documentId !== "string" || typeof p?.tenantId !== "string") return null;
+    if (typeof p?.exp !== "number" || typeof p?.iat !== "number") return null;
+    if (typeof p?.ver !== "string") return null;
+    if (!Array.isArray(p?.scopes)) return null;
+    if (typeof p?.user?.id !== "string") return null;
+    const name = typeof p.user?.name === "string" ? p.user.name : p.user.id;
+    const claims: Claims = {
+      documentId: p.documentId, tenantId: p.tenantId, exp: p.exp, iat: p.iat,
+      scopes: scopesFromStrings(p.scopes.filter((s: unknown) => typeof s === "string")),
+      user: { id: p.user.id, name }, ver: p.ver,
+      jti: typeof p.jti === "string" ? p.jti : null,
+    };
+    // strict: ver "1.0" and non-empty user.id
+    if (claims.ver !== "1.0" || claims.user.id === "") return null;
+    return claims;
+  }
+
+  // ---- validators (mirror validate_*) ------------------------------------
+  type ValErr =
+    | { t: "TokenExpired"; expiredAt: number; now: number }
+    | { t: "TenantMismatch"; a: string; b: string }
+    | { t: "DocumentMismatch"; a: string; b: string }
+    | { t: "MissingScope"; required: string; available: string[] };
+
+  function validate(
+    claims: Claims, tenant: string, doc: string, now: number, access: string,
+  ): ValErr | null {
+    // connection: expiry -> tenant -> document
+    if (!(claims.exp > now)) return { t: "TokenExpired", expiredAt: claims.exp, now };
+    if (claims.tenantId !== tenant) return { t: "TenantMismatch", a: claims.tenantId, b: tenant };
+    if (claims.documentId !== doc) return { t: "DocumentMismatch", a: claims.documentId, b: doc };
+    if (access === "connection") return null;
+    // read
+    if (!claims.scopes.includes("doc:read"))
+      return { t: "MissingScope", required: "doc:read", available: claims.scopes };
+    if (access === "read") return null;
+    // write / summary layer on top of read
+    if (access === "write" && !claims.scopes.includes("doc:write"))
+      return { t: "MissingScope", required: "doc:write", available: claims.scopes };
+    if (access === "summary" && !claims.scopes.includes("summary:write"))
+      return { t: "MissingScope", required: "summary:write", available: claims.scopes };
+    return null;
+  }
+
+  function formatError(e: ValErr): string {
+    switch (e.t) {
+      case "TokenExpired": return `Token expired at ${e.expiredAt} (current time: ${e.now})`;
+      case "TenantMismatch": return `Token tenant '${e.a}' does not match request tenant '${e.b}'`;
+      case "DocumentMismatch": return `Token document '${e.a}' does not match request document '${e.b}'`;
+      case "MissingScope": return `Missing required scope: ${e.required}`;
+    }
+  }
+  function errorToHttpCode(e: ValErr): number {
+    return e.t === "TokenExpired" ? 401 : 403;
+  }
+
+  // ---- wiring ------------------------------------------------------------
+  const root = document.getElementById("signet-playground");
+  if (root) {
+    const $ = <T extends HTMLElement = HTMLElement>(id: string) => root.querySelector<T>("#" + id)!;
+    const mintForm = $("pg-mint");
+    const verifyForm = $("pg-verify");
+    const tokenEl = $("pg-token");
+    const resultEl = $("pg-result");
+    const copyBtn = $<HTMLButtonElement>("pg-copy");
+
+    // A fixed "now" anchors the demo so exp math is stable across renders.
+    const NOW = 1_752_600_000;
+    let lastToken = "";
+    let mintNow = NOW;
+
+    const val = (id: string) => $<HTMLInputElement>(id).value.trim();
+    const num = (id: string) => parseInt($<HTMLInputElement>(id).value, 10) || 0;
+    const mintScopes = () =>
+      Array.from(mintForm.querySelectorAll<HTMLInputElement>('.pg__scopes input:checked')).map((c) => c.value);
+    const access = () =>
+      (verifyForm.querySelector<HTMLInputElement>('input[name="v-access"]:checked')?.value) ?? "read";
+
+    function renderToken(token: string) {
+      const [h, p, s] = token.split(".");
+      tokenEl.innerHTML =
+        `<span class="k--h">${h}</span><span class="dot">.</span>` +
+        `<span class="k--p">${p}</span><span class="dot">.</span>` +
+        `<span class="k--s">${s}</span>`;
+    }
+
+    async function runMint() {
+      mintNow = NOW;
+      lastToken = await mintToken({
+        tenant: val("m-tenant"), documentId: val("m-doc"),
+        scopes: mintScopes(), userId: val("m-user"),
+        secret: val("m-secret"), now: mintNow, expiresIn: num("m-exp"),
+      });
+      renderToken(lastToken);
+      // keep the verifier in sync with the freshly minted token + secret
+      $<HTMLInputElement>("v-secret").value = val("m-secret");
+      await runVerify(lastToken);
+    }
+
+    function claimRow(k: string, v: string) {
+      return `<div class="row"><dt>${k}</dt><dd>${v}</dd></div>`;
+    }
+
+    async function runVerify(token: string) {
+      const v = await verifySignature(token, val("v-secret"));
+      if (!v.ok) {
+        const label = v.error === "BadSignature" ? "Signature rejected" : "Malformed token";
+        const why = v.error === "BadSignature"
+          ? "The HMAC-SHA256 signature did not match (constant-time compare)."
+          : "The token, header, or algorithm could not be parsed.";
+        resultEl.className = "pg__result is-fail";
+        resultEl.innerHTML =
+          `<div class="verdict"><span class="badge badge--fail">${v.error}</span>` +
+          `<strong>${label}</strong></div><p class="why">${why}</p>`;
+        return;
+      }
+      const c = v.claims;
+      const anchor = root.querySelector<HTMLInputElement>("#v-now-anchor");
+      const now = anchor && anchor.value ? parseInt(anchor.value, 10) : mintNow;
+      const err = validate(c, val("v-tenant"), val("v-doc"), now, access());
+      const claims =
+        `<dl class="claims">` +
+        claimRow("documentId", c.documentId) +
+        claimRow("tenantId", c.tenantId) +
+        claimRow("scopes", c.scopes.length ? c.scopes.join(", ") : "—") +
+        claimRow("user.id", c.user.id) +
+        claimRow("iat", String(c.iat)) +
+        claimRow("exp", String(c.exp)) +
+        claimRow("ver", c.ver) +
+        claimRow("jti", c.jti ? c.jti.slice(0, 12) + "…" : "—") +
+        `</dl>`;
+
+      if (!err) {
+        resultEl.className = "pg__result is-ok";
+        resultEl.innerHTML =
+          `<div class="verdict"><span class="badge badge--ok">200</span>` +
+          `<strong>Access granted</strong><span class="acc">${access()} access</span></div>` +
+          claims;
+      } else {
+        resultEl.className = "pg__result is-fail";
+        resultEl.innerHTML =
+          `<div class="verdict"><span class="badge badge--fail">${errorToHttpCode(err)}</span>` +
+          `<strong>${err.t}</strong></div>` +
+          `<p class="why">${formatError(err)}</p>` + claims;
+      }
+    }
+
+    // debounce so typing feels live without thrashing
+    let t: number | undefined;
+    const schedule = () => { clearTimeout(t); t = window.setTimeout(runMint, 160); };
+    mintForm.addEventListener("input", schedule);
+
+    verifyForm.addEventListener("input", () => {
+      // editing the verify secret / tenant / doc / access re-runs against the current token
+      clearTimeout(t);
+      t = window.setTimeout(() => runVerify(lastToken), 120);
+    });
+
+    // tamper controls
+    $("v-tamper").addEventListener("click", () => {
+      if (!lastToken) return;
+      const [h, p, s] = lastToken.split(".");
+      const flipped = p.slice(0, -2) + (p.slice(-2, -1) === "A" ? "B" : "A") + p.slice(-1);
+      lastToken = `${h}.${flipped}.${s}`;
+      renderToken(lastToken);
+      runVerify(lastToken);
+    });
+    $("v-expire").addEventListener("click", () => {
+      // move "now" past the token's expiry
+      const hidden = ensureNowAnchor();
+      hidden.value = String(mintNow + num("m-exp") + 60);
+      runVerify(lastToken);
+    });
+    $("v-reset").addEventListener("click", () => {
+      const hidden = ensureNowAnchor();
+      hidden.value = "";
+      runMint();
+    });
+
+    function ensureNowAnchor(): HTMLInputElement {
+      let el = root.querySelector<HTMLInputElement>("#v-now-anchor");
+      if (!el) {
+        el = document.createElement("input");
+        el.type = "hidden";
+        el.id = "v-now-anchor";
+        verifyForm.appendChild(el);
+      }
+      return el;
+    }
+
+    copyBtn.addEventListener("click", async () => {
+      if (!lastToken) return;
+      try {
+        await navigator.clipboard.writeText(lastToken);
+        const prev = copyBtn.textContent;
+        copyBtn.textContent = "Copied";
+        copyBtn.classList.add("is-copied");
+        setTimeout(() => { copyBtn.textContent = prev; copyBtn.classList.remove("is-copied"); }, 1400);
+      } catch { /* clipboard unavailable */ }
+    });
+
+    runMint();
+  }
+</script>
+
+<style>
+  .pg {
+    display: grid;
+    gap: var(--space-s);
+  }
+  .pg__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-s);
+  }
+  @media (max-width: 720px) {
+    .pg__grid { grid-template-columns: 1fr; }
+  }
+
+  .pg__card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-3);
+    padding: var(--space-m);
+    box-shadow: var(--shadow-1);
+  }
+  .pg__cardhead { margin-bottom: var(--space-s); }
+  .pg__cardhead h3 {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink-strong);
+    display: inline;
+  }
+  .pg__step {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--wax-ink);
+    font-weight: 600;
+    margin-right: 0.6em;
+    letter-spacing: 0.02em;
+  }
+  .pg__cardhead p {
+    margin: 0.35em 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .pg__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+  }
+  .pg__field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+  .pg__field--wide { grid-column: 1 / -1; }
+  .pg__field > span,
+  .pg__field legend {
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .pg__hint { color: var(--muted-2); text-transform: none; font-weight: 400; }
+
+  .pg input[type="text"],
+  .pg input[type="number"] {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-1);
+    padding: 0.5rem 0.6rem;
+    width: 100%;
+    transition: border-color var(--dur-1) var(--ease-out-quart),
+      box-shadow var(--dur-1) var(--ease-out-quart);
+  }
+  .pg input:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft);
+  }
+
+  .pg__scopes,
+  .pg__access {
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-2);
+    padding: 0.7rem 0.8rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin: 0;
+  }
+  .pg__access { grid-column: 1 / -1; }
+  .pg__scopes legend,
+  .pg__access legend { padding: 0 0.4em; }
+  .pg__chk,
+  .pg__radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .pg__chk input,
+  .pg__radio input { accent-color: var(--primary); width: 1rem; height: 1rem; }
+
+  .pg__tamper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: var(--space-s);
+    padding-top: var(--space-s);
+    border-top: 1px solid var(--line);
+  }
+  .pg__ghost {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    padding: 0.3rem 0.75rem;
+    cursor: pointer;
+    transition: background var(--dur-1) var(--ease-out-quart),
+      border-color var(--dur-1) var(--ease-out-quart);
+  }
+  .pg__ghost:hover { background: var(--wax-soft); border-color: var(--wax-line); color: var(--wax-ink); }
+  .pg__ghost:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* ---- ink readout strip ---- */
+  .pg__wire {
+    background: var(--ink-bg);
+    border-radius: var(--radius-3);
+    padding: var(--space-m);
+    box-shadow: var(--shadow-ink);
+  }
+  .pg__wirehead {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+  .pg__wiretitle {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    color: var(--on-ink);
+  }
+  .pg__legend {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--on-ink-faint);
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+  .pg__legend .k { font-weight: 600; }
+  .k--h { color: var(--primary-on-ink); }
+  .k--p { color: var(--on-ink); }
+  .k--s { color: var(--wax-on-ink); }
+  .pg__copy {
+    margin-left: auto;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--on-ink);
+    background: transparent;
+    border: 1px solid var(--line-on-ink);
+    border-radius: var(--radius-pill);
+    padding: 0.28rem 0.75rem;
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease-out-quart), color var(--dur-1);
+  }
+  .pg__copy:hover { border-color: var(--wax-on-ink); color: var(--wax-on-ink); }
+  .pg__copy.is-copied { border-color: var(--ok-on-ink); color: var(--ok-on-ink); }
+  .pg__copy:focus-visible { outline: 2px solid var(--primary-on-ink); outline-offset: 2px; }
+
+  .pg__token {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.75;
+    word-break: break-all;
+    color: var(--on-ink);
+  }
+  .pg__token .dot { color: var(--on-ink-faint); padding: 0 0.05em; }
+  .pg__token:focus-visible { outline: 2px solid var(--primary-on-ink); outline-offset: 4px; border-radius: 2px; }
+
+  /* ---- result ---- */
+  .pg__result {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-3);
+    padding: var(--space-m);
+    background: var(--paper);
+    min-height: 3rem;
+  }
+  .pg__result.is-ok { border-color: color-mix(in oklab, var(--ok), white 55%); background: var(--ok-soft); }
+  .pg__result.is-fail { border-color: var(--wax-line); background: var(--wax-soft); }
+
+  .pg__result .verdict {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .pg__result .verdict strong {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    letter-spacing: -0.02em;
+    color: var(--ink-strong);
+  }
+  .pg__result .acc {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-1);
+    color: var(--paper);
+  }
+  .badge--ok { background: var(--ok); }
+  .badge--fail { background: var(--wax); }
+  .pg__result .why {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--ink);
+    margin: 0.75rem 0 0;
+  }
+  .pg__result .claims {
+    margin: 0.9rem 0 0;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  .pg__result .claims .row {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--line), transparent 40%);
+  }
+  .pg__result .claims dt {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .pg__result .claims dd {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink);
+    margin: 0;
+    word-break: break-all;
+  }
+  @media (max-width: 460px) {
+    .pg__result .claims .row { grid-template-columns: 1fr; gap: 0.1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pg *,
+    .pg *::before,
+    .pg *::after { transition-duration: 0.001ms !important; }
+  }
+</style>
+
+<!-- Styles for runtime-injected content (token spans + result panel).
+     Astro's scoped styles only tag template elements, so innerHTML nodes need
+     global rules — namespaced under #signet-playground so nothing leaks. -->
+<style is:global>
+  #signet-playground .pg__token .k--h { color: var(--primary-on-ink); }
+  #signet-playground .pg__token .k--p { color: var(--on-ink); }
+  #signet-playground .pg__token .k--s { color: var(--wax-on-ink); }
+  #signet-playground .pg__token .dot { color: var(--on-ink-faint); padding: 0 0.05em; }
+
+  #signet-playground .pg__result {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-3);
+    padding: var(--space-m);
+    background: var(--paper);
+    min-height: 3rem;
+  }
+  #signet-playground .pg__result.is-ok {
+    border-color: color-mix(in oklab, var(--ok), white 55%);
+    background: var(--ok-soft);
+  }
+  #signet-playground .pg__result.is-fail {
+    border-color: var(--wax-line);
+    background: var(--wax-soft);
+  }
+  #signet-playground .pg__result .verdict {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  #signet-playground .pg__result .verdict strong {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    letter-spacing: -0.02em;
+    color: var(--ink-strong);
+  }
+  #signet-playground .pg__result .acc {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+  #signet-playground .pg__result .badge {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-1);
+    color: var(--paper);
+  }
+  #signet-playground .pg__result .badge--ok { background: var(--ok); }
+  #signet-playground .pg__result .badge--fail { background: var(--wax); }
+  #signet-playground .pg__result .why {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--ink);
+    margin: 0.75rem 0 0;
+  }
+  #signet-playground .pg__result .claims {
+    margin: 0.9rem 0 0;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  #signet-playground .pg__result .claims .row {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--line), transparent 40%);
+  }
+  #signet-playground .pg__result .claims dt {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin: 0;
+  }
+  #signet-playground .pg__result .claims dd {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink);
+    margin: 0;
+    word-break: break-all;
+  }
+  @media (max-width: 460px) {
+    #signet-playground .pg__result .claims .row { grid-template-columns: 1fr; gap: 0.1rem; }
+  }
+</style>

@@ -1,0 +1,626 @@
+---
+import Landing from "../layouts/Landing.astro";
+import Playground from "../components/Playground.astro";
+
+const repo = "https://github.com/tylerbutler/signet";
+const pinnedRef = "6ea697d3d1d6c5ab60e214414fbfbb134b355a8c";
+
+// Rendered via set:html so Astro doesn't parse the literal Gleam / TOML braces
+// as JSX expressions.
+const authorizeCode = `<span class="c-kw">import</span> signet/jwt
+<span class="c-kw">import</span> signet/types.{DocWrite}
+
+<span class="c-kw">pub fn</span> <span class="c-fn">authorize</span>(token, secret, tenant, doc, now) {
+  <span class="c-kw">case</span> jwt.<span class="c-fn">verify_signature</span>(token, secret) {
+    <span class="c-ok">Ok</span>(claims) -> jwt.<span class="c-fn">validate_write_access</span>(claims, tenant, doc, now)
+    <span class="c-err">Error</span>(_) -> <span class="c-err">Error</span>(jwt.MissingClaim(<span class="c-str">"signature"</span>))
+  }
+}`;
+
+const tomlCode = `[dependencies]
+signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-str">"${pinnedRef.slice(0, 12)}…"</span> }`;
+---
+
+<Landing>
+  <!-- ================= HERO (drenched deep ink) ================= -->
+  <div class="hero">
+    <header class="nav">
+      <a class="brand" href="/" aria-label="signet home">
+        <svg class="brand__seal" width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <circle cx="16" cy="16" r="15" stroke="currentColor" stroke-width="1.4" />
+          <circle cx="16" cy="16" r="11.4" stroke="currentColor" stroke-width="0.9" opacity="0.45" />
+          <path d="M20.6 11.4c-1.5-1.5-4.3-1.8-6-.5-1.7 1.3-1.5 3.4.6 4.4 1.3.6 3.2 1 4.2 1.8 2 1.5 1.4 3.9-1 4.9-1.9.8-4.6.4-6.2-1"
+            stroke="currentColor" stroke-width="1.9" stroke-linecap="round" fill="none" />
+        </svg>
+        <span class="brand__word">signet</span>
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="/quickstart/">Docs</a>
+        <a href="#playground" class="nav__hide-sm">Playground</a>
+        <a href={repo} class="nav__git">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span class="nav__hide-sm">GitHub</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="hero__inner">
+      <div class="hero__copy">
+        <p class="hero__kicker reveal" style="--d:0ms">Fluid Framework token primitives · Gleam</p>
+        <h1 class="hero__title reveal" style="--d:70ms">
+          One <span class="wax">seal</span> for every Fluid document token.
+        </h1>
+        <p class="hero__lede reveal" style="--d:150ms">
+          signet is the shared implementation of Fluid document-token handling —
+          HS256 minting, constant-time verification, and strict claim validation.
+          One codebase your whole stack signs against, instead of three copies
+          drifting apart.
+        </p>
+        <div class="hero__cta reveal" style="--d:230ms">
+          <a class="btn btn--wax" href="/quickstart/">Read the docs</a>
+          <a class="btn btn--ghost" href={repo}>See the source</a>
+        </div>
+        <p class="hero__meta reveal" style="--d:300ms">
+          Pure Gleam · no FFI · <code>gleam_crypto</code> HMAC-SHA256
+        </p>
+      </div>
+
+      <div class="hero__mark reveal" style="--d:120ms" aria-hidden="true">
+        <div class="seal">
+          <svg viewBox="0 0 220 220" fill="none" width="320" height="320">
+            <circle cx="110" cy="110" r="98" stroke="var(--wax-on-ink)" stroke-width="2" />
+            <circle cx="110" cy="110" r="86" stroke="var(--wax-on-ink)" stroke-width="1" opacity="0.55" />
+            <circle cx="110" cy="110" r="74" stroke="var(--on-ink-faint)" stroke-width="0.8" opacity="0.4" stroke-dasharray="2 4" />
+            <path d="M143 80c-10-10-29-12-40-3-11 9-10 23 4 30 9 4.5 22 6.5 28 12 13 10 9 26-6 33-13 6-31 3-42-7"
+              stroke="var(--on-ink)" stroke-width="9" stroke-linecap="round" fill="none" />
+          </svg>
+          <span class="seal__token" aria-hidden="true">eyJhbGciOiJIUzI1NiJ9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= THE PROBLEM ================= -->
+  <section class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Three copies. One seal.</h2>
+        <p class="lede">
+          The same Fluid document token was minted and verified in three places —
+          each stack carrying its own subtly different code, free to drift. signet
+          is the single implementation they now share, consolidated per
+          <a href={`${repo}#`}>Levee ADR-007</a>.
+        </p>
+      </div>
+
+      <div class="merge">
+        <ul class="merge__from" aria-label="Consolidated implementations">
+          <li><code>spillway/jwt</code></li>
+          <li><code>floodgate/auth</code></li>
+          <li><code>levee_auth/token</code></li>
+        </ul>
+        <div class="merge__arrow" aria-hidden="true">
+          <svg viewBox="0 0 80 24" width="80" height="24" fill="none">
+            <path d="M2 12h64" stroke="var(--wax)" stroke-width="1.5" />
+            <path d="M60 5l10 7-10 7" stroke="var(--wax)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div class="merge__to">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="16" cy="16" r="15" stroke="var(--wax-ink)" stroke-width="1.4" />
+            <circle cx="16" cy="16" r="11.4" stroke="var(--wax-ink)" stroke-width="0.9" opacity="0.45" />
+            <path d="M20.6 11.4c-1.5-1.5-4.3-1.8-6-.5-1.7 1.3-1.5 3.4.6 4.4 1.3.6 3.2 1 4.2 1.8 2 1.5 1.4 3.9-1 4.9-1.9.8-4.6.4-6.2-1"
+              stroke="var(--ink-strong)" stroke-width="1.9" stroke-linecap="round" fill="none" />
+          </svg>
+          <div>
+            <strong>signet</strong>
+            <span>one codebase</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= THE SEQUENCE (earned numbering) ================= -->
+  <section class="band band--surface">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Mint, verify, validate.</h2>
+        <p class="lede">
+          Three movements, kept deliberately separate. Sign a token; check its
+          signature in constant time; then check the claims against the request —
+          in the order the spec requires.
+        </p>
+      </div>
+
+      <ol class="movements">
+        <li class="movement">
+          <span class="movement__no">01</span>
+          <h3>Mint</h3>
+          <p>Build a strict HS256 token with typed scopes and a random <code>jti</code>.</p>
+          <code class="movement__sig">mint_token(tenant, doc, scopes, user, secret, now, ttl)</code>
+        </li>
+        <li class="movement">
+          <span class="movement__no">02</span>
+          <h3>Verify</h3>
+          <p>Constant-time HMAC check, then parse the payload into <code>TokenClaims</code>.</p>
+          <code class="movement__sig">verify_signature(token, secret) -&gt; Result(TokenClaims, _)</code>
+        </li>
+        <li class="movement">
+          <span class="movement__no">03</span>
+          <h3>Validate</h3>
+          <p>Expiry → tenant → document → scope. Errors carry their own HTTP code.</p>
+          <code class="movement__sig">validate_write_access(claims, tenant, doc, now)</code>
+        </li>
+      </ol>
+
+      <div class="sample">
+        <div class="sample__bar">
+          <span class="sample__dot"></span>authorize.gleam
+        </div>
+        <pre class="sample__code"><code set:html={authorizeCode}></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PLAYGROUND ================= -->
+  <section class="band" id="playground">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Press the seal yourself.</h2>
+        <p class="lede">
+          A real signet token, minted and verified in your browser with the Web
+          Crypto API — the same HS256, the same strict validation order, the same
+          error messages. Change a scope, tamper with the payload, expire it, and
+          watch validation respond.
+        </p>
+      </div>
+      <Playground />
+    </div>
+  </section>
+
+  <!-- ================= INSTALL ================= -->
+  <section class="band band--ink">
+    <div class="wrap install">
+      <div class="install__copy">
+        <h2>Add it by commit.</h2>
+        <p class="lede">
+          signet isn't on Hex. You pin a commit in <code>gleam.toml</code>, so mint
+          and verify stay byte-for-byte reproducible across every stack that
+          depends on it.
+        </p>
+        <a class="btn btn--wax" href="/quickstart/">Read the quickstart</a>
+      </div>
+      <div class="install__code">
+        <div class="sample sample--ink">
+          <div class="sample__bar"><span class="sample__dot"></span>gleam.toml</div>
+          <pre class="sample__code"><code set:html={tomlCode}></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <div class="foot__brand">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <circle cx="16" cy="16" r="15" stroke="currentColor" stroke-width="1.4" />
+          <path d="M20.6 11.4c-1.5-1.5-4.3-1.8-6-.5-1.7 1.3-1.5 3.4.6 4.4 1.3.6 3.2 1 4.2 1.8 2 1.5 1.4 3.9-1 4.9-1.9.8-4.6.4-6.2-1"
+            stroke="currentColor" stroke-width="1.9" stroke-linecap="round" fill="none" />
+        </svg>
+        <span>signet</span>
+        <span class="foot__tag">Fluid document-token primitives</span>
+      </div>
+      <nav class="foot__links" aria-label="Footer">
+        <a href="/quickstart/">Quickstart</a>
+        <a href="/reference/types/">Types</a>
+        <a href="/reference/jwt/">JWT &amp; validation</a>
+        <a href={repo}>GitHub</a>
+      </nav>
+    </div>
+  </footer>
+</Landing>
+
+<style>
+  .wrap {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 5vw, 3rem);
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    background:
+      radial-gradient(120% 90% at 85% -10%, oklch(0.28 0.05 300 / 0.55), transparent 60%),
+      radial-gradient(90% 80% at 0% 110%, oklch(0.3 0.06 33 / 0.35), transparent 55%),
+      var(--ink-bg);
+    color: var(--on-ink);
+    overflow: hidden;
+  }
+  .nav {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: 1.4rem clamp(1.25rem, 5vw, 3rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--on-ink);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+  .brand__seal { color: var(--wax-on-ink); }
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+  }
+  .nav__links a {
+    color: var(--on-ink-muted);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color var(--dur-1) var(--ease-out-quart);
+  }
+  .nav__links a:hover { color: var(--on-ink); }
+  .nav__git {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .hero__inner {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 3rem) clamp(4rem, 8vw, 7rem);
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: center;
+    gap: clamp(2rem, 5vw, 4rem);
+  }
+  .hero__kicker {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    color: var(--wax-on-ink);
+    margin: 0 0 1.1rem;
+  }
+  .hero__title {
+    font-size: var(--display);
+    letter-spacing: -0.04em;
+    color: var(--sl-color-white, #fff);
+    margin: 0;
+  }
+  .hero__title .wax { color: var(--wax-on-ink); }
+  .hero__lede {
+    margin: 1.4rem 0 0;
+    max-width: 44ch;
+    font-size: 1.16rem;
+    line-height: 1.62;
+    color: var(--on-ink-muted);
+    letter-spacing: 0.005em;
+  }
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 2rem;
+  }
+  .hero__meta {
+    margin: 1.6rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--on-ink-faint);
+  }
+  .hero__meta code { color: var(--on-ink-muted); }
+
+  .hero__mark {
+    display: flex;
+    justify-content: center;
+  }
+  .seal {
+    position: relative;
+    display: grid;
+    place-items: center;
+    filter: drop-shadow(0 20px 50px oklch(0.575 0.185 33 / 0.28));
+  }
+  .seal::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    background: radial-gradient(circle, oklch(0.575 0.185 33 / 0.22), transparent 68%);
+    z-index: 0;
+  }
+  .seal svg { position: relative; z-index: 1; width: clamp(220px, 30vw, 330px); height: auto; }
+  .seal__token {
+    position: absolute;
+    bottom: -0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--on-ink-faint);
+    opacity: 0.6;
+    z-index: 1;
+  }
+
+  /* ---------- BUTTONS ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    padding: 0.72rem 1.3rem;
+    border-radius: var(--radius-2);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: transform var(--dur-1) var(--ease-out-quart),
+      background var(--dur-1) var(--ease-out-quart),
+      border-color var(--dur-1) var(--ease-out-quart);
+  }
+  .btn--wax {
+    background: var(--wax);
+    color: #fff;
+    box-shadow: var(--shadow-wax);
+  }
+  .btn--wax:hover { background: var(--wax-strong); transform: translateY(-1px); }
+  .btn--ghost {
+    color: var(--on-ink);
+    border-color: var(--line-on-ink);
+  }
+  .btn--ghost:hover { border-color: var(--wax-on-ink); color: var(--wax-on-ink); }
+
+  /* ---------- BANDS ---------- */
+  .band { padding-block: var(--space-2xl); }
+  .band--surface { background: var(--surface); border-block: 1px solid var(--line); }
+  .band--ink {
+    background: var(--ink-bg);
+    color: var(--on-ink);
+  }
+  .section-head { max-width: 46rem; margin-bottom: var(--space-l); }
+  .section-head h2 {
+    font-size: var(--display-2);
+    color: var(--ink-strong);
+  }
+  .band--ink .section-head h2 { color: var(--sl-color-white, #fff); }
+  .lede {
+    margin: 1rem 0 0;
+    font-size: 1.14rem;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 60ch;
+  }
+  .band--ink .lede { color: var(--on-ink-muted); }
+  .lede a { color: var(--wax-ink); text-underline-offset: 0.18em; }
+  .band--ink .lede a { color: var(--wax-on-ink); }
+
+  /* ---------- MERGE DIAGRAM ---------- */
+  .merge {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    justify-content: start;
+    gap: clamp(1rem, 4vw, 2.5rem);
+  }
+  .merge__from {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .merge__from li {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+  .merge__from code {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--wax-line);
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-1);
+    display: inline-block;
+    background: var(--paper);
+  }
+  .merge__arrow svg { display: block; }
+  .merge__to {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.9rem 1.2rem;
+    border: 1.5px solid var(--wax-line);
+    border-radius: var(--radius-3);
+    background: var(--wax-soft);
+  }
+  .merge__to strong {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+    color: var(--ink-strong);
+    display: block;
+  }
+  .merge__to span {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* ---------- MOVEMENTS ---------- */
+  .movements {
+    list-style: none;
+    margin: 0 0 var(--space-xl);
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+  .movement {
+    padding: var(--space-m) var(--space-m) var(--space-m) 0;
+    border-top: 2px solid var(--ink-strong);
+    margin-right: var(--space-m);
+  }
+  .movement__no {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wax-ink);
+  }
+  .movement h3 {
+    font-size: var(--step-2);
+    color: var(--ink-strong);
+    margin: 0.5rem 0 0.6rem;
+  }
+  .movement p {
+    color: var(--muted);
+    font-size: 1rem;
+    margin: 0 0 1rem;
+  }
+  .movement__sig {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--primary-ink);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* ---------- CODE SAMPLE ---------- */
+  .sample {
+    border-radius: var(--radius-3);
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+    border: 1px solid var(--line);
+  }
+  .sample--ink { border-color: var(--line-on-ink); }
+  .sample__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: oklch(0.155 0.025 262);
+    color: var(--on-ink-muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.6rem 1rem;
+  }
+  .sample__dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--wax);
+    box-shadow: 0 0 0 3px oklch(0.575 0.185 33 / 0.2);
+  }
+  .sample__code {
+    margin: 0;
+    background: var(--ink-bg);
+    color: var(--on-ink);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    line-height: 1.7;
+    padding: 1.2rem 1.3rem;
+    overflow-x: auto;
+  }
+  .sample__code code { font-family: inherit; }
+  .c-kw { color: var(--wax-on-ink); font-weight: 600; }
+  .c-fn { color: var(--primary-on-ink); }
+  .c-str { color: oklch(0.82 0.11 150); }
+  .c-ok { color: oklch(0.8 0.13 155); }
+  .c-err { color: var(--wax-on-ink); }
+
+  /* ---------- INSTALL ---------- */
+  .install {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .install__copy h2 { font-size: var(--display-2); color: var(--sl-color-white, #fff); }
+  .install__copy .btn { margin-top: 1.8rem; }
+  .install__copy code,
+  .install .lede code { color: var(--wax-on-ink); font-family: var(--font-mono); font-size: 0.92em; }
+
+  /* ---------- FOOTER ---------- */
+  .foot {
+    background: var(--ink-bg);
+    color: var(--on-ink-muted);
+    border-top: 1px solid var(--line-on-ink-soft);
+    padding-block: var(--space-l);
+  }
+  .foot__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .foot__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--on-ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .foot__brand svg { color: var(--wax-on-ink); }
+  .foot__tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--on-ink-faint);
+  }
+  .foot__links {
+    display: flex;
+    gap: 1.3rem;
+    flex-wrap: wrap;
+  }
+  .foot__links a {
+    color: var(--on-ink-muted);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    transition: color var(--dur-1) var(--ease-out-quart);
+  }
+  .foot__links a:hover { color: var(--wax-on-ink); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .hero__inner { grid-template-columns: 1fr; }
+    .hero__mark { order: -1; }
+    .seal svg { width: clamp(180px, 44vw, 240px); }
+    .install { grid-template-columns: 1fr; }
+    .movements { grid-template-columns: 1fr; }
+    .movement { margin-right: 0; }
+  }
+  @media (max-width: 560px) {
+    .nav__hide-sm { display: none; }
+    .merge { grid-template-columns: 1fr; justify-items: start; }
+    .merge__arrow { transform: rotate(90deg); margin-left: 1rem; }
+  }
+
+  /* ---------- MOTION (enhances an already-visible default) ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      animation: rise 0.72s var(--ease-out-expo) both;
+      animation-delay: var(--d, 0ms);
+    }
+    .hero__mark.reveal { transform: translateY(16px) scale(0.98); }
+    @keyframes rise {
+      to { opacity: 1; transform: none; }
+    }
+  }
+</style>

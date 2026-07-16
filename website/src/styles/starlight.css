@@ -1,0 +1,263 @@
+/* ============================================================================
+   signet docs — Starlight, re-skinned to "Ink & Wax".
+   Maps the tokens.css palette onto Starlight's --sl-* system for light + dark,
+   sets the serif reading measure, and reworks code, links, and chrome so the
+   docs read like signet, not like default Starlight.
+   ============================================================================ */
+
+/* ---- Typefaces --------------------------------------------------------- */
+:root {
+  --sl-font: var(--font-display);
+  --sl-font-mono: var(--font-mono);
+  --sl-content-width: 47rem;
+  --sl-text-code: 0.9em;
+  --sl-nav-height: 4rem;
+}
+
+/* ---- Dark mode (Starlight default :root) — deep ink ------------------- */
+:root {
+  --sl-color-white: oklch(0.97 0.01 262);
+  --sl-color-gray-1: oklch(0.9 0.014 262);
+  --sl-color-gray-2: var(--on-ink);
+  --sl-color-gray-3: var(--on-ink-muted);
+  --sl-color-gray-4: oklch(0.55 0.018 262);
+  --sl-color-gray-5: var(--line-on-ink);
+  --sl-color-gray-6: var(--line-on-ink-soft);
+  --sl-color-black: var(--ink-bg);
+
+  --sl-color-accent-low: oklch(0.3 0.075 258);
+  --sl-color-accent: var(--primary-on-ink);
+  --sl-color-accent-high: oklch(0.87 0.085 258);
+
+  --sl-color-text: var(--on-ink);
+  --sl-color-text-accent: var(--primary-on-ink);
+  --sl-color-bg: var(--ink-bg);
+  --sl-color-bg-nav: oklch(0.185 0.028 262 / 0.72);
+  --sl-color-bg-sidebar: var(--ink-bg);
+  --sl-color-bg-inline-code: oklch(0.28 0.03 262);
+  --sl-color-hairline: var(--line-on-ink-soft);
+  --sl-color-hairline-light: var(--line-on-ink-soft);
+  --sl-color-hairline-shade: oklch(0.14 0.024 262);
+
+  --wax-doc: var(--wax-on-ink);
+  --code-frame-bg: oklch(0.155 0.025 262);
+  --code-frame-line: var(--line-on-ink-soft);
+}
+
+/* ---- Light mode — paper ---------------------------------------------- */
+:root[data-theme="light"] {
+  --sl-color-white: var(--ink-strong);
+  --sl-color-gray-1: var(--ink);
+  --sl-color-gray-2: oklch(0.35 0.025 262);
+  --sl-color-gray-3: var(--muted);
+  --sl-color-gray-4: oklch(0.63 0.018 262);
+  --sl-color-gray-5: var(--line-strong);
+  --sl-color-gray-6: var(--line);
+  --sl-color-gray-7: var(--surface);
+  --sl-color-black: var(--paper);
+
+  --sl-color-accent-low: var(--primary-soft);
+  --sl-color-accent: var(--primary);
+  --sl-color-accent-high: var(--primary-strong);
+
+  --sl-color-text: var(--ink);
+  --sl-color-text-accent: var(--primary-ink);
+  --sl-color-bg: var(--paper);
+  --sl-color-bg-nav: oklch(1 0 0 / 0.72);
+  --sl-color-bg-sidebar: var(--surface);
+  --sl-color-bg-inline-code: var(--surface-2);
+  --sl-color-hairline: var(--line);
+  --sl-color-hairline-light: var(--line);
+  --sl-color-hairline-shade: var(--line);
+
+  --wax-doc: var(--wax-ink);
+  --code-frame-bg: oklch(0.205 0.028 262);
+  --code-frame-line: transparent;
+}
+
+/* ---- Chrome ----------------------------------------------------------- */
+header.header {
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: var(--sl-text-lg);
+}
+.site-title img,
+.site-title svg {
+  color: var(--wax-doc);
+}
+
+/* Sidebar: quieter, foundry-spaced */
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover {
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
+  font-weight: 600;
+}
+.sidebar-content .large,
+summary .group-label span {
+  font-family: var(--font-display);
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Prose: serif reading, grotesque headings ------------------------- */
+.sl-markdown-content {
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  --sl-text-body: 1.02rem;
+}
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.content-panel h1#_top {
+  font-size: var(--step-4);
+  font-weight: 700;
+}
+.sl-markdown-content h2 {
+  margin-top: 2.6em;
+  padding-top: 0.9em;
+  border-top: 1px solid var(--sl-color-hairline);
+  font-size: var(--step-2);
+}
+.sl-markdown-content h3 {
+  margin-top: 2em;
+  font-size: var(--step-1);
+}
+
+/* Prose links: cobalt with a wax underline that fills on hover.
+   Exclude Starlight's heading anchor links so headings don't get underlined. */
+.sl-markdown-content a:not(:where(.not-content *)):not(.sl-anchor-link) {
+  color: var(--sl-color-text-accent);
+  text-decoration-color: var(--wax-line);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--dur-1) var(--ease-out-quart);
+}
+.sl-markdown-content a:not(:where(.not-content *)):not(.sl-anchor-link):hover {
+  text-decoration-color: var(--wax-doc);
+}
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) a {
+  text-decoration: none;
+}
+
+/* Inline code: mono, in serif prose */
+.sl-markdown-content :not(pre) > code {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--radius-1);
+  padding: 0.12em 0.36em;
+}
+
+/* Lead paragraph after the title reads larger */
+.sl-markdown-content > p:first-of-type {
+  font-size: 1.16rem;
+  line-height: 1.6;
+  color: var(--sl-color-white);
+}
+
+/* Tables: hairline, tabular numerals */
+.sl-markdown-content table {
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-variant-numeric: tabular-nums;
+}
+.sl-markdown-content :is(th, td) {
+  border-color: var(--sl-color-hairline);
+}
+.sl-markdown-content th {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sl-markdown-content thead code,
+.sl-markdown-content td code {
+  color: var(--sl-color-text-accent);
+}
+
+/* ---- Expressive Code frames: seal them in ink ------------------------- */
+.expressive-code {
+  /* editor frames */
+  --ec-frm-edBg: var(--code-frame-bg);
+  --ec-frm-edTabBarBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+  --ec-frm-edTabBarBrdBtmCol: var(--line-on-ink-soft);
+  --ec-frm-edActTabBg: var(--code-frame-bg);
+  --ec-frm-edActTabIndTopCol: var(--wax-on-ink);
+  --ec-frm-edTabBarBrdCol: transparent;
+  /* terminal frames (sh / bash blocks) — keep them dark ink too */
+  --ec-frm-trmBg: var(--code-frame-bg);
+  --ec-frm-trmTtbBg: color-mix(in oklab, var(--code-frame-bg), black 22%);
+  --ec-frm-trmTtbFg: var(--on-ink-muted);
+  --ec-frm-trmTtbBrdBtmCol: var(--line-on-ink-soft);
+  --ec-frm-trmTtbDotsFg: var(--on-ink-faint);
+  /* shared */
+  --ec-frm-frameBoxShdCssVal: var(--shadow-2);
+  --ec-brdCol: var(--code-frame-line);
+  --ec-frm-tabBarBrdBtmCol: var(--code-frame-line);
+  --ec-uiFontFamily: var(--font-display);
+  --ec-codeFontFamily: var(--font-mono);
+  --ec-codeFontSize: 0.86rem;
+  --ec-codeLineHt: 1.62;
+  border-radius: var(--radius-3);
+}
+.expressive-code .frame {
+  border-radius: var(--radius-3);
+  overflow: hidden;
+}
+.expressive-code .frame pre {
+  border: none;
+  border-radius: var(--radius-3);
+}
+/* the wax seal sits on every code frame's title bar */
+.expressive-code .frame.has-title .title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Aside / callouts: full hairline + wax tint, never a side-stripe --- */
+.starlight-aside {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--radius-2);
+  background: var(--sl-color-bg-sidebar);
+}
+.starlight-aside--note {
+  border-color: var(--primary-line);
+}
+.starlight-aside--tip {
+  border-color: var(--wax-line);
+}
+.starlight-aside--caution,
+.starlight-aside--danger {
+  border-color: var(--wax-line);
+  background: var(--wax-soft);
+}
+:root[data-theme="light"] .starlight-aside--caution,
+:root[data-theme="light"] .starlight-aside--danger {
+  background: var(--wax-soft);
+}
+.starlight-aside__title {
+  font-family: var(--font-display);
+}
+
+/* ---- Hero (splash template, if ever used) ----------------------------- */
+.hero h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+/* ---- Reduced motion --------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sl-markdown-content a,
+  * {
+    transition-duration: 0.001ms !important;
+  }
+}
