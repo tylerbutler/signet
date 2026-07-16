@@ -54,7 +54,7 @@
   --on-ink-muted: oklch(0.75 0.03 40); /* secondary on deep oxblood */
   --on-ink-faint: oklch(0.6 0.03 40);
   --primary-on-ink: oklch(0.74 0.16 22); /* crimson, brightened for dark */
-  --wax-on-ink: oklch(0.67 0.2 25); /* wax, brightened for dark */
+  --wax-on-ink: oklch(0.63 0.22 22); /* wax, brightened for dark — matches the button red, not orange */
   --line-on-ink: oklch(0.33 0.05 25);
   --line-on-ink-soft: oklch(0.27 0.04 25);
 
