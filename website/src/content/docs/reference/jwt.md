@@ -10,6 +10,24 @@ Verify first, then validate.
 
 Built on `gleam_crypto` — HMAC-SHA256 and constant-time comparison, no FFI.
 
+:::caution[Migration: validation constructors moved]
+Validation now lives in the pure `signet/claims` module. Import its constructors
+in expressions and patterns: change `jwt.TokenExpired`, `jwt.TenantMismatch`,
+`jwt.DocumentMismatch`, `jwt.MissingScope`, `jwt.MissingClaim`, and
+`jwt.InvalidClaim` to `claims.*` after adding `import signet/claims`.
+Gleam cannot re-export constructors.
+
+`jwt.JwtValidationError` and `jwt.JwtValidationResult(a)` are aliases of the
+single types in `signet/claims`; all `jwt` validation functions still forward
+there. Crypto APIs and validation behavior are unchanged.
+:::
+
+For browser claim-only code, import `signet/claims` and `signet/types` directly.
+Their generated JavaScript import graph avoids `node:crypto`. This module and
+the root `signet` convenience module still load `gleam_crypto`; browser crypto
+support is not provided by this extraction. Validation alone does not verify a
+signature or authenticate untrusted claims.
+
 ## Crypto
 
 ### `verify_signature`
@@ -65,8 +83,10 @@ pub type JwtCryptoError {
 
 ## Validation
 
-Each validator returns `Result(Nil, JwtValidationError)`. They compose, so the
-higher-level ones run the lower-level checks first.
+The following API is available directly from `signet/claims`; the functions in
+`signet/jwt` are compatibility forwards. Each validator returns
+`Result(Nil, JwtValidationError)`. They compose, so the higher-level ones run
+the lower-level checks first.
 
 ### Individual checks
 
@@ -108,6 +128,8 @@ The order is the spec's (Fluid protocol section 3.3):
 4. `validate_summary_access` — read access, then `SummaryWrite`.
 
 ### `JwtValidationError`
+
+Defined only in `signet/claims` (aliased as `jwt.JwtValidationError`):
 
 ```gleam
 pub type JwtValidationError {

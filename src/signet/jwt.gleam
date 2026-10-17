@@ -1,60 +1,39 @@
-/// JWT validation for Fluid Framework protocol
-///
-/// Provides token claims validation per spec section 3:
-/// - Document match
-/// - Tenant match
-/// - Expiration check
-/// - Scope checking
+//// HS256 JWT signing, verification, and compatibility claim validators.
+////
+//// Validation delegates to `signet/claims`. Import validation error
+//// constructors from that module; Gleam cannot re-export constructors.
+//// Browser claim-only code should import `signet/claims`, not this module.
+
 import gleam/bit_array
 import gleam/crypto
 import gleam/dict
 import gleam/dynamic
 import gleam/dynamic/decode
-import gleam/int
 import gleam/json
-import gleam/list
 import gleam/option.{None}
 import gleam/result
 import gleam/string
 
+import signet/claims
 import signet/types.{
-  type Scope, type TokenClaims, DocRead, DocWrite, SummaryWrite, TokenClaims,
-  User, scope_to_string, scopes_from_strings, scopes_to_strings,
+  type Scope, type TokenClaims, TokenClaims, User, scopes_from_strings,
+  scopes_to_strings,
 }
 
-/// JWT validation error types
-pub type JwtValidationError {
-  /// Token has expired
-  TokenExpired(expired_at: Int, current_time: Int)
-  /// Token tenant doesn't match request
-  TenantMismatch(token_tenant: String, request_tenant: String)
-  /// Token document doesn't match request
-  DocumentMismatch(token_document: String, request_document: String)
-  /// Token missing required scope
-  MissingScope(required: Scope, available: List(Scope))
-  /// Token is missing a required claim
-  MissingClaim(claim_name: String)
-  /// Token claim has invalid value
-  InvalidClaim(claim_name: String, reason: String)
-}
+/// Alias of the single error type in `signet/claims`. Import constructors there.
+pub type JwtValidationError =
+  claims.JwtValidationError
 
 /// Validation result type
 pub type JwtValidationResult(a) =
-  Result(a, JwtValidationError)
+  claims.JwtValidationResult(a)
 
 /// Validate that the token has not expired
 pub fn validate_expiration(
   claims: TokenClaims,
   current_time_seconds: Int,
 ) -> JwtValidationResult(Nil) {
-  case claims.expiration > current_time_seconds {
-    True -> Ok(Nil)
-    False ->
-      Error(TokenExpired(
-        expired_at: claims.expiration,
-        current_time: current_time_seconds,
-      ))
-  }
+  claims.validate_expiration(claims, current_time_seconds)
 }
 
 /// Validate that the token tenant matches the request tenant
@@ -62,14 +41,7 @@ pub fn validate_tenant(
   claims: TokenClaims,
   request_tenant_id: String,
 ) -> JwtValidationResult(Nil) {
-  case claims.tenant_id == request_tenant_id {
-    True -> Ok(Nil)
-    False ->
-      Error(TenantMismatch(
-        token_tenant: claims.tenant_id,
-        request_tenant: request_tenant_id,
-      ))
-  }
+  claims.validate_tenant(claims, request_tenant_id)
 }
 
 /// Validate that the token document matches the request document
@@ -77,14 +49,7 @@ pub fn validate_document(
   claims: TokenClaims,
   request_document_id: String,
 ) -> JwtValidationResult(Nil) {
-  case claims.document_id == request_document_id {
-    True -> Ok(Nil)
-    False ->
-      Error(DocumentMismatch(
-        token_document: claims.document_id,
-        request_document: request_document_id,
-      ))
-  }
+  claims.validate_document(claims, request_document_id)
 }
 
 /// Validate that the token has the required scope
@@ -92,31 +57,27 @@ pub fn validate_scope(
   claims: TokenClaims,
   required_scope: Scope,
 ) -> JwtValidationResult(Nil) {
-  case list.contains(claims.scopes, required_scope) {
-    True -> Ok(Nil)
-    False ->
-      Error(MissingScope(required: required_scope, available: claims.scopes))
-  }
+  claims.validate_scope(claims, required_scope)
 }
 
 /// Check if token has a specific scope (returns Bool, doesn't error)
 pub fn has_scope(claims: TokenClaims, scope: Scope) -> Bool {
-  list.contains(claims.scopes, scope)
+  claims.has_scope(claims, scope)
 }
 
 /// Check if token has read permission
 pub fn has_read_scope(claims: TokenClaims) -> Bool {
-  has_scope(claims, DocRead)
+  claims.has_read_scope(claims)
 }
 
 /// Check if token has write permission
 pub fn has_write_scope(claims: TokenClaims) -> Bool {
-  has_scope(claims, DocWrite)
+  claims.has_write_scope(claims)
 }
 
 /// Check if token has summary write permission
 pub fn has_summary_write_scope(claims: TokenClaims) -> Bool {
-  has_scope(claims, SummaryWrite)
+  claims.has_summary_write_scope(claims)
 }
 
 /// Validate all claims for a document connection
@@ -130,10 +91,12 @@ pub fn validate_connection_claims(
   document_id: String,
   current_time_seconds: Int,
 ) -> JwtValidationResult(Nil) {
-  use _ <- result.try(validate_expiration(claims, current_time_seconds))
-  use _ <- result.try(validate_tenant(claims, tenant_id))
-  use _ <- result.try(validate_document(claims, document_id))
-  Ok(Nil)
+  claims.validate_connection_claims(
+    claims,
+    tenant_id,
+    document_id,
+    current_time_seconds,
+  )
 }
 
 /// Validate claims for read access
@@ -144,14 +107,12 @@ pub fn validate_read_access(
   document_id: String,
   current_time_seconds: Int,
 ) -> JwtValidationResult(Nil) {
-  use _ <- result.try(validate_connection_claims(
+  claims.validate_read_access(
     claims,
     tenant_id,
     document_id,
     current_time_seconds,
-  ))
-  use _ <- result.try(validate_scope(claims, DocRead))
-  Ok(Nil)
+  )
 }
 
 /// Validate claims for write access
@@ -162,14 +123,12 @@ pub fn validate_write_access(
   document_id: String,
   current_time_seconds: Int,
 ) -> JwtValidationResult(Nil) {
-  use _ <- result.try(validate_read_access(
+  claims.validate_write_access(
     claims,
     tenant_id,
     document_id,
     current_time_seconds,
-  ))
-  use _ <- result.try(validate_scope(claims, DocWrite))
-  Ok(Nil)
+  )
 }
 
 /// Validate claims for summary write access
@@ -180,60 +139,22 @@ pub fn validate_summary_access(
   document_id: String,
   current_time_seconds: Int,
 ) -> JwtValidationResult(Nil) {
-  use _ <- result.try(validate_read_access(
+  claims.validate_summary_access(
     claims,
     tenant_id,
     document_id,
     current_time_seconds,
-  ))
-  use _ <- result.try(validate_scope(claims, SummaryWrite))
-  Ok(Nil)
+  )
 }
 
 /// Format JWT validation error as human-readable message
 pub fn format_error(error: JwtValidationError) -> String {
-  case error {
-    TokenExpired(expired_at, current_time) ->
-      "Token expired at "
-      <> int.to_string(expired_at)
-      <> " (current time: "
-      <> int.to_string(current_time)
-      <> ")"
-
-    TenantMismatch(token_tenant, request_tenant) ->
-      "Token tenant '"
-      <> token_tenant
-      <> "' does not match request tenant '"
-      <> request_tenant
-      <> "'"
-
-    DocumentMismatch(token_document, request_document) ->
-      "Token document '"
-      <> token_document
-      <> "' does not match request document '"
-      <> request_document
-      <> "'"
-
-    MissingScope(required, _available) ->
-      "Missing required scope: " <> scope_to_string(required)
-
-    MissingClaim(claim_name) -> "Missing required claim: " <> claim_name
-
-    InvalidClaim(claim_name, reason) ->
-      "Invalid claim '" <> claim_name <> "': " <> reason
-  }
+  claims.format_error(error)
 }
 
 /// Get HTTP status code for JWT validation error
 pub fn error_to_http_code(error: JwtValidationError) -> Int {
-  case error {
-    TokenExpired(_, _) -> 401
-    TenantMismatch(_, _) -> 403
-    DocumentMismatch(_, _) -> 403
-    MissingScope(_, _) -> 403
-    MissingClaim(_) -> 401
-    InvalidClaim(_, _) -> 401
-  }
+  claims.error_to_http_code(error)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

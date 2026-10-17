@@ -2,6 +2,7 @@ import gleam/dict
 import gleam/list
 import gleam/option
 import signet
+import signet/claims as claim_validation
 import signet/jwt
 import signet/types.{DocRead, DocWrite, SummaryRead, SummaryWrite}
 import startest
@@ -49,7 +50,7 @@ pub fn validate_expiration_expired_test() {
   let claims = make_test_claims("tenant", "doc", [DocRead], 1000)
   jwt.validate_expiration(claims, 1500)
   |> assert_error_variant(fn(err) {
-    let assert jwt.TokenExpired(exp, current) = err
+    let assert claim_validation.TokenExpired(exp, current) = err
     exp |> expect.to_equal(1000)
     current |> expect.to_equal(1500)
   })
@@ -64,7 +65,7 @@ pub fn validate_tenant_mismatch_test() {
   let claims = make_test_claims("my-tenant", "doc", [DocRead], 2000)
   jwt.validate_tenant(claims, "other-tenant")
   |> assert_error_variant(fn(err) {
-    let assert jwt.TenantMismatch(token, request) = err
+    let assert claim_validation.TenantMismatch(token, request) = err
     token |> expect.to_equal("my-tenant")
     request |> expect.to_equal("other-tenant")
   })
@@ -79,7 +80,7 @@ pub fn validate_document_mismatch_test() {
   let claims = make_test_claims("tenant", "my-doc", [DocRead], 2000)
   jwt.validate_document(claims, "other-doc")
   |> assert_error_variant(fn(err) {
-    let assert jwt.DocumentMismatch(token, request) = err
+    let assert claim_validation.DocumentMismatch(token, request) = err
     token |> expect.to_equal("my-doc")
     request |> expect.to_equal("other-doc")
   })
@@ -95,7 +96,7 @@ pub fn validate_scope_missing_test() {
   let claims = make_test_claims("tenant", "doc", [DocRead], 2000)
   jwt.validate_scope(claims, DocWrite)
   |> assert_error_variant(fn(err) {
-    let assert jwt.MissingScope(required, _available) = err
+    let assert claim_validation.MissingScope(required, _available) = err
     required |> expect.to_equal(DocWrite)
   })
 }
@@ -145,7 +146,7 @@ pub fn validate_connection_claims_expired_test() {
   let claims = make_test_claims("my-tenant", "my-doc", [DocRead], 1000)
   jwt.validate_connection_claims(claims, "my-tenant", "my-doc", 1500)
   |> assert_error_variant(fn(err) {
-    let assert jwt.TokenExpired(_, _) = err
+    let assert claim_validation.TokenExpired(_, _) = err
     Nil
   })
 }
@@ -154,7 +155,7 @@ pub fn validate_connection_claims_tenant_mismatch_test() {
   let claims = make_test_claims("my-tenant", "my-doc", [DocRead], 2000)
   jwt.validate_connection_claims(claims, "other-tenant", "my-doc", 1500)
   |> assert_error_variant(fn(err) {
-    let assert jwt.TenantMismatch(_, _) = err
+    let assert claim_validation.TenantMismatch(_, _) = err
     Nil
   })
 }
@@ -168,7 +169,7 @@ pub fn validate_read_access_missing_scope_test() {
   let claims = make_test_claims("tenant", "doc", [DocWrite], 2000)
   jwt.validate_read_access(claims, "tenant", "doc", 1500)
   |> assert_error_variant(fn(err) {
-    let assert jwt.MissingScope(required, _) = err
+    let assert claim_validation.MissingScope(required, _) = err
     required |> expect.to_equal(DocRead)
   })
 }
@@ -182,30 +183,35 @@ pub fn validate_write_access_missing_write_scope_test() {
   let claims = make_test_claims("tenant", "doc", [DocRead], 2000)
   jwt.validate_write_access(claims, "tenant", "doc", 1500)
   |> assert_error_variant(fn(err) {
-    let assert jwt.MissingScope(required, _) = err
+    let assert claim_validation.MissingScope(required, _) = err
     required |> expect.to_equal(DocWrite)
   })
 }
 
 pub fn validate_summary_access_test() {
-  let claims =
-    make_test_claims("tenant", "doc", [DocRead, SummaryWrite], 2000)
+  let claims = make_test_claims("tenant", "doc", [DocRead, SummaryWrite], 2000)
   jwt.validate_summary_access(claims, "tenant", "doc", 1500)
   |> expect.to_be_ok()
 }
 
 pub fn format_error_test() {
-  jwt.format_error(jwt.TokenExpired(1000, 1500))
+  jwt.format_error(claim_validation.TokenExpired(1000, 1500))
   |> expect.to_equal("Token expired at 1000 (current time: 1500)")
 }
 
 pub fn error_to_http_code_test() {
-  jwt.error_to_http_code(jwt.TokenExpired(0, 0)) |> expect.to_equal(401)
-  jwt.error_to_http_code(jwt.TenantMismatch("", "")) |> expect.to_equal(403)
-  jwt.error_to_http_code(jwt.DocumentMismatch("", "")) |> expect.to_equal(403)
-  jwt.error_to_http_code(jwt.MissingScope(DocRead, [])) |> expect.to_equal(403)
-  jwt.error_to_http_code(jwt.MissingClaim("")) |> expect.to_equal(401)
-  jwt.error_to_http_code(jwt.InvalidClaim("", "")) |> expect.to_equal(401)
+  jwt.error_to_http_code(claim_validation.TokenExpired(0, 0))
+  |> expect.to_equal(401)
+  jwt.error_to_http_code(claim_validation.TenantMismatch("", ""))
+  |> expect.to_equal(403)
+  jwt.error_to_http_code(claim_validation.DocumentMismatch("", ""))
+  |> expect.to_equal(403)
+  jwt.error_to_http_code(claim_validation.MissingScope(DocRead, []))
+  |> expect.to_equal(403)
+  jwt.error_to_http_code(claim_validation.MissingClaim(""))
+  |> expect.to_equal(401)
+  jwt.error_to_http_code(claim_validation.InvalidClaim("", ""))
+  |> expect.to_equal(401)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

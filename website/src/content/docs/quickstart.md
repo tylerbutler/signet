@@ -7,6 +7,15 @@ signet gives you three things for Fluid Framework document tokens: the **claim
 types**, **HS256** signing and verification, and a set of **claim validators**.
 This page takes you from zero to a verified, validated token.
 
+:::caution[Validation constructor migration]
+Validation errors now belong to `signet/claims`. Import that module and change
+`jwt.TokenExpired`, `jwt.TenantMismatch`, `jwt.DocumentMismatch`,
+`jwt.MissingScope`, `jwt.MissingClaim`, and `jwt.InvalidClaim` to `claims.*`
+in both expressions and patterns. Existing `jwt` validation functions and
+error/result type aliases remain available; constructors cannot be re-exported
+by Gleam.
+:::
+
 ## Install
 
 signet is not published to Hex. You depend on it by **pinning a commit** in your
@@ -14,8 +23,11 @@ signet is not published to Hex. You depend on it by **pinning a commit** in your
 
 ```toml title="gleam.toml"
 [dependencies]
-signet = { git = "https://github.com/tylerbutler/signet.git", ref = "6ea697d3d1d6c5ab60e214414fbfbb134b355a8c" }
+signet = { git = "https://github.com/tylerbutler/signet.git", ref = "FULL_COMMIT_SHA" }
 ```
+
+Replace `FULL_COMMIT_SHA` with a full commit SHA containing `signet/claims`.
+Older pins from before the extraction do not provide that module.
 
 Then fetch it:
 
@@ -88,6 +100,7 @@ validators compose: `validate_write_access` runs the connection checks
 
 ```gleam title="authorize.gleam"
 import gleam/result
+import signet/claims
 import signet/jwt
 
 pub fn authorize_write(
@@ -96,27 +109,33 @@ pub fn authorize_write(
   tenant: String,
   document: String,
   now: Int,
-) -> Result(Nil, jwt.JwtValidationError) {
-  use claims <- result.try(
+) -> Result(Nil, claims.JwtValidationError) {
+  use token_claims <- result.try(
     jwt.verify_signature(token, secret)
-    |> result.replace_error(jwt.MissingClaim("signature")),
+    |> result.replace_error(claims.MissingClaim("signature")),
   )
-  jwt.validate_write_access(claims, tenant, document, now)
+  claims.validate_write_access(token_claims, tenant, document, now)
 }
 ```
 
 When validation fails, the error carries what to say and how to answer:
 
 ```gleam
-case jwt.validate_write_access(claims, tenant, document, now) {
+case claims.validate_write_access(token_claims, tenant, document, now) {
   Ok(Nil) -> serve()
   Error(err) -> {
-    let status = jwt.error_to_http_code(err) // 401 or 403
-    let message = jwt.format_error(err)       // human-readable reason
+    let status = claims.error_to_http_code(err) // 401 or 403
+    let message = claims.format_error(err)       // human-readable reason
     reject(status, message)
   }
 }
 ```
+
+For browser claim-only code, import `signet/claims` and `signet/types` without
+`signet/jwt` or the root `signet` module. The pure modules do not load
+`node:crypto`; the crypto modules still do. Claim validation expects trusted
+claims and does not verify a JWT signature. This extraction adds no browser
+signing or signature-verification support.
 
 ## Try it live
 

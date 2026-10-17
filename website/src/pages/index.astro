@@ -3,22 +3,22 @@ import Landing from "../layouts/Landing.astro";
 import Playground from "../components/Playground.astro";
 
 const repo = "https://github.com/tylerbutler/signet";
-const pinnedRef = "6ea697d3d1d6c5ab60e214414fbfbb134b355a8c";
+const pinnedRef = "FULL_COMMIT_SHA";
 
 // Rendered via set:html so Astro doesn't parse the literal Gleam / TOML braces
 // as JSX expressions.
 const authorizeCode = `<span class="c-kw">import</span> signet/jwt
-<span class="c-kw">import</span> signet/types.{DocWrite}
+<span class="c-kw">import</span> signet/claims
 
 <span class="c-kw">pub fn</span> <span class="c-fn">authorize</span>(token, secret, tenant, doc, now) {
   <span class="c-kw">case</span> jwt.<span class="c-fn">verify_signature</span>(token, secret) {
-    <span class="c-ok">Ok</span>(claims) -> jwt.<span class="c-fn">validate_write_access</span>(claims, tenant, doc, now)
-    <span class="c-err">Error</span>(_) -> <span class="c-err">Error</span>(jwt.MissingClaim(<span class="c-str">"signature"</span>))
+    <span class="c-ok">Ok</span>(token_claims) -> claims.<span class="c-fn">validate_write_access</span>(token_claims, tenant, doc, now)
+    <span class="c-err">Error</span>(_) -> <span class="c-err">Error</span>(claims.MissingClaim(<span class="c-str">"signature"</span>))
   }
 }`;
 
 const tomlCode = `[dependencies]
-signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-str">"${pinnedRef.slice(0, 12)}…"</span> }`;
+signet = { git = <span class="c-str">"${repo}.git"</span>, ref = <span class="c-str">"${pinnedRef}"</span> }`;
 ---
 
 <Landing>

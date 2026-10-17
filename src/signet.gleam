@@ -1,8 +1,9 @@
 //// signet — Fluid Framework token primitives.
 ////
 //// Convenience re-exports of the most-used token API. The full surface lives in
-//// `signet/jwt` (HS256 crypto + claim validation) and `signet/types` (claims,
-//// user, scopes).
+//// `signet/jwt` (HS256 crypto), `signet/claims` (pure claim validation), and
+//// `signet/types` (claims, user, scopes). This convenience module loads crypto;
+//// browser claim-only code should import `signet/claims` and `signet/types`.
 
 import signet/jwt
 import signet/types
@@ -17,7 +18,7 @@ pub type Scope =
   types.Scope
 
 /// Verify an HS256 signature and parse the payload into `TokenClaims`. Does not
-/// validate tenant/document/expiry — pair with the `signet/jwt` validators.
+/// validate tenant/document/expiry — pair with the `signet/claims` validators.
 pub fn verify_signature(
   token: String,
   secret: String,
